@@ -1,0 +1,89 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env.local
+apps/api/.env
+apps/api/data/bsc-established-top-tokens.json
+apps/api/data/bsc-established-top-tokens.json.*.tmp
+apps/api/data/uniswap-volume-token-catalog.v1.json.*.tmp
+apps/api/data/dexscreener-wallet-price-cache.v1.json
+apps/api/data/dexscreener-wallet-price-cache.v1.json.tmp-*
+apps/api/data/manual-refund-candidates.jsonl
+
+# Generated third-party license audit/build artifacts
+/.license-audit/
+/public/legal/third-party/
+/THIRD_PARTY-ALL-LICENSES.txt
+/THIRD_PARTY-PRODUCTION-LICENSES.txt
+/THIRD_PARTY-PRODUCTION-LICENSES.json
+/THIRD_PARTY-LICENSE-FILES.txt
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+/.env
+.unchained/
+
+# Local external/private service checkouts
+/.unchained/
+/Pchained/
+/Pchained-public/
+/Gas-Assist/
+/.gas-assist/
+/gas-assist-private/
+
+# Local service runtime data
+/.gas-assist-runtime/
+/.local-services/
+/runtime/
+/tmp/
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Dependencies and generated output
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+.cache/
+**/.cache/
+.vite/
+**/.vite/
+
+# Runtime/database artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.log
+*.pid
+*.sock

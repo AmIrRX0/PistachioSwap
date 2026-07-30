@@ -1,0 +1,155 @@
+{
+  "allowedLicensePatterns": [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BlueOak-1.0.0",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "Unlicense",
+    "Zlib"
+  ],
+  "blockedLicensePatterns": [
+    "AGPL",
+    "BUSL",
+    "BSL",
+    "Commons Clause",
+    "Elastic License",
+    "GPL-2.0",
+    "GPL-3.0",
+    "SSPL",
+    "UNLICENSED"
+  ],
+  "blockedPackages": [],
+  "reviewedPackages": [
+    {
+      "pattern": "@pancakeswap/*",
+      "acceptedLicensePatterns": ["LGPL", "MIT"],
+      "classification": "conditional",
+      "conditions": "Preserve notices and review LGPL source, modification, replacement, relinking, bundling, and distribution obligations for every release.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "rpc-websockets",
+      "acceptedLicensePatterns": ["LGPL-3.0-only"],
+      "classification": "conditional",
+      "conditions": "Preserve the LGPL license and review the distributed form for replacement or relinking obligations.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@ethereumjs/rlp",
+      "acceptedLicensePatterns": ["MPL-2.0"],
+      "classification": "conditional",
+      "conditions": "Keep MPL-covered files and modifications under MPL-2.0 when distributed and preserve notices.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@ethereumjs/tx",
+      "acceptedLicensePatterns": ["MPL-2.0"],
+      "classification": "conditional",
+      "conditions": "Keep MPL-covered files and modifications under MPL-2.0 when distributed and preserve notices.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@ethereumjs/util",
+      "acceptedLicensePatterns": ["MPL-2.0"],
+      "classification": "conditional",
+      "conditions": "Keep MPL-covered files and modifications under MPL-2.0 when distributed and preserve notices.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@fontsource/ubuntu",
+      "acceptedLicensePatterns": ["UFL-1.0"],
+      "classification": "conditional",
+      "conditions": "Preserve the Ubuntu Font License and required font attribution in distributed assets.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@reown/*",
+      "acceptedLicensePatterns": ["Unknown", "Reown Community License", "Reown AppKit Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed license, use required Reown infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@walletconnect/core",
+      "acceptedLicensePatterns": ["Unknown", "WalletConnect Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed WalletConnect license, use required infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@walletconnect/sign-client",
+      "acceptedLicensePatterns": ["Unknown", "WalletConnect Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed WalletConnect license, use required infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@walletconnect/types",
+      "acceptedLicensePatterns": ["Unknown", "WalletConnect Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed WalletConnect license, use required infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@walletconnect/universal-provider",
+      "acceptedLicensePatterns": ["Unknown", "WalletConnect Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed WalletConnect license, use required infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@walletconnect/utils",
+      "acceptedLicensePatterns": ["Unknown", "WalletConnect Community License"],
+      "classification": "custom",
+      "conditions": "Preserve the Reown attribution and exact installed WalletConnect license, use required infrastructure, and monitor commercial-use thresholds.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@metamask/analytics",
+      "acceptedLicensePatterns": ["Unknown", "SEE LICENSE"],
+      "classification": "custom",
+      "conditions": "Preserve the exact ConsenSys license and prominent copyright notice. The installed terms define permitted use to include applications at or below 10,000 MAU; obtain separate permission before exceeding that limit or relying on another use case.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@metamask/connect-multichain",
+      "acceptedLicensePatterns": ["Unknown", "SEE LICENSE"],
+      "classification": "custom",
+      "conditions": "Preserve the exact ConsenSys license and prominent copyright notice. The installed terms define permitted use to include applications at or below 10,000 MAU; obtain separate permission before exceeding that limit or relying on another use case.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@metamask/multichain-ui",
+      "acceptedLicensePatterns": ["Unknown", "SEE LICENSE"],
+      "classification": "custom",
+      "conditions": "Preserve the exact ConsenSys license and prominent copyright notice. The installed terms define permitted use to include applications at or below 10,000 MAU; obtain separate permission before exceeding that limit or relying on another use case.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "@chainflip/*",
+      "acceptedLicensePatterns": ["Unknown", "ISC"],
+      "classification": "conditional",
+      "conditions": "Installed toolkit subpackages omit license metadata, but their exact upstream monorepo root declares ISC. Preserve the upstream attribution record and recheck on every version update.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "eyes",
+      "acceptedLicensePatterns": ["Unknown", "MIT"],
+      "classification": "resolved-metadata",
+      "conditions": "The installed 0.1.8 package includes an MIT license file with copyright (c) 2009 cloudhead; preserve that license when distributing copies.",
+      "reviewedOn": "2026-07-27"
+    },
+    {
+      "pattern": "text-encoding-utf-8",
+      "acceptedLicensePatterns": ["Unknown", "Unlicense"],
+      "classification": "resolved-metadata",
+      "conditions": "The installed 1.0.2 package includes a public-domain dedication and Unlicense notice despite missing package metadata; preserve the included license file.",
+      "reviewedOn": "2026-07-27"
+    }
+  ],
+  "unresolvedPackages": []
+}

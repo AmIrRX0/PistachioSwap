@@ -1,0 +1,5 @@
+.select-token-button {
+    width: auto;
+    min-width: var(--size-select-token-width);
+    padding-inline: 14px;
+}

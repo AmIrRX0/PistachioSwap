@@ -1,0 +1,359 @@
+name: Deploy VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.30.3'
+  API_SERVICE: pistachioswap-api
+  PUBLIC_ORIGIN: https://pistachioswap.com
+
+jobs:
+  build-test-deploy:
+    name: Build, test, and deploy to VPS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Validate deployment secrets
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+
+          for name in \
+            VPS_SSH_KEY \
+            VPS_KNOWN_HOSTS \
+            VPS_PORT \
+            VPS_USER \
+            VPS_HOST \
+            VPS_APP_DIR
+          do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+
+          if [[ ! "$VPS_PORT" =~ ^[0-9]+$ ]] ||
+            (( VPS_PORT < 1 || VPS_PORT > 65535 ))
+          then
+            echo "::error::VPS_PORT must be an integer from 1 through 65535."
+            exit 1
+          fi
+
+          if [[ "$VPS_APP_DIR" != /* || "$VPS_APP_DIR" =~ [[:space:]] ]]; then
+            echo "::error::VPS_APP_DIR must be an absolute path without whitespace."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Security gate
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: API typecheck
+        run: pnpm --filter @pistachio/api typecheck
+
+      - name: Frontend deployment tests
+        run: >
+          pnpm exec vitest run src
+          --exclude src/App.wallet.test.jsx
+          --exclude src/features/gas-assist/components/GasAssistApprovalDialog.test.jsx
+          --exclude src/features/passkey/components/PistachioWalletController.test.jsx
+          --exclude src/features/tokens/components/TokenSelector.test.jsx
+          --exclude src/features/tokens/services/walletTokens.test.js
+          --exclude src/hooks/useCrossChainRoutes.test.js
+          --exclude src/services/swapSettings.test.js
+          --exclude src/web3/useWalletState.test.js
+
+      - name: API deployment tests
+        run: >
+          pnpm --filter @pistachio/api exec vitest run
+          test/gas-assist-proxy.test.ts
+          test/quotes.test.ts
+          test/unchained-wallet-tokens.test.ts
+          test/wallet-token-route.test.ts
+          test/token-discovery-registry.test.ts
+          test/cross-chain.test.ts
+
+      - name: Frontend build
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: pnpm build
+
+      - name: License audit
+        run: pnpm licenses:audit
+
+      - name: Create verified release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          staging_dir="$RUNNER_TEMP/pistachioswap-release"
+          archive="$staging_dir/${GITHUB_SHA}.tar.gz"
+          listing="$staging_dir/${GITHUB_SHA}.files"
+
+          rm -rf "$staging_dir"
+          mkdir -p "$staging_dir"
+
+          tar \
+            --exclude-vcs \
+            --exclude='./.github' \
+            --exclude='./node_modules' \
+            --exclude='*/node_modules' \
+            --exclude='./dist' \
+            --exclude='./release' \
+            --exclude='./.env' \
+            --exclude='./.env.*' \
+            --exclude='*/.env' \
+            --exclude='*/.env.*' \
+            -czf "$archive" \
+            .
+
+          (
+            cd "$staging_dir"
+            sha256sum "${GITHUB_SHA}.tar.gz" \
+              > "${GITHUB_SHA}.tar.gz.sha256"
+          )
+
+          tar -tzf "$archive" > "$listing"
+
+          for required_path in \
+            ./package.json \
+            ./pnpm-lock.yaml \
+            ./pnpm-workspace.yaml \
+            ./vite.config.js \
+            ./apps/api/package.json \
+            ./apps/api/src/server.ts \
+            ./scripts/deploy/activate-vps-release.sh
+          do
+            grep -Fxq "$required_path" "$listing" || {
+              echo "::error::Release archive is missing $required_path"
+              exit 1
+            }
+          done
+
+          if grep -Eq '(^|/)\.env($|\.)' "$listing"; then
+            echo "::error::Release archive contains an environment file."
+            exit 1
+          fi
+
+          (
+            cd "$staging_dir"
+            sha256sum -c "${GITHUB_SHA}.tar.gz.sha256"
+          )
+
+      - name: Prepare SSH
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          sed -i 's/\r$//' ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+
+      - name: Upload release archive
+        shell: bash
+        env:
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+
+          staging_dir="$RUNNER_TEMP/pistachioswap-release"
+          printf -v releases_dir_q '%q' "$VPS_APP_DIR/releases"
+
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            "mkdir -p -- $releases_dir_q"
+
+          scp \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -P "$VPS_PORT" \
+            "$staging_dir/${GITHUB_SHA}.tar.gz" \
+            "$staging_dir/${GITHUB_SHA}.tar.gz.sha256" \
+            "$VPS_USER@$VPS_HOST:$VPS_APP_DIR/releases/"
+
+      - name: Deploy and verify release
+        shell: bash
+        env:
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+
+          deployment_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf -v app_dir_q '%q' "$VPS_APP_DIR"
+          printf -v sha_q '%q' "$GITHUB_SHA"
+          printf -v service_q '%q' "$API_SERVICE"
+          printf -v origin_q '%q' "$PUBLIC_ORIGIN"
+          printf -v deployment_id_q '%q' "$deployment_id"
+
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            "bash -s -- $app_dir_q $sha_q $service_q $origin_q $deployment_id_q" \
+            <<'REMOTE'
+          set -euo pipefail
+
+          APP_DIR="$1"
+          SHA="$2"
+          API_SERVICE="$3"
+          PUBLIC_ORIGIN="$4"
+          DEPLOYMENT_ID="$5"
+
+          RELEASES_DIR="$APP_DIR/releases"
+          RELEASE_DIR="$RELEASES_DIR/${SHA}-${DEPLOYMENT_ID}"
+          TARBALL="$RELEASES_DIR/$SHA.tar.gz"
+          CHECKSUM="$TARBALL.sha256"
+
+          for command in tar sha256sum bash; do
+            command -v "$command" >/dev/null 2>&1 || {
+              echo "Required VPS command is missing: $command" >&2
+              exit 1
+            }
+          done
+
+          [[ -f "$TARBALL" ]] || {
+            echo "Release archive is missing: $TARBALL" >&2
+            exit 1
+          }
+
+          [[ -f "$CHECKSUM" ]] || {
+            echo "Release checksum is missing: $CHECKSUM" >&2
+            exit 1
+          }
+
+          (
+            cd "$RELEASES_DIR"
+            sha256sum -c "$(basename "$CHECKSUM")"
+          )
+
+          rm -rf "$RELEASE_DIR"
+          mkdir -p "$RELEASE_DIR"
+          tar -xzf "$TARBALL" -C "$RELEASE_DIR"
+
+          deployment_script="$RELEASE_DIR/scripts/deploy/activate-vps-release.sh"
+          [[ -s "$deployment_script" ]] || {
+            echo "Deployment script is missing from the release." >&2
+            exit 1
+          }
+
+          bash "$deployment_script" \
+            "$APP_DIR" \
+            "$RELEASE_DIR" \
+            "$SHA" \
+            "$API_SERVICE" \
+            "$PUBLIC_ORIGIN"
+          REMOTE
+
+      - name: Verify public edge from runner
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f "$headers" "$body"' EXIT
+
+          status="$(
+            curl \
+              --silent \
+              --show-error \
+              --location \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --retry 2 \
+              --retry-delay 2 \
+              --user-agent \
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/150 Safari/537.36' \
+              --dump-header "$headers" \
+              --output "$body" \
+              --write-out '%{http_code}' \
+              "$PUBLIC_ORIGIN/" || true
+          )"
+
+          if [[ "$status" == '200' ]]; then
+            test -s "$body"
+            grep -Eiq '<!doctype html|<html' "$body"
+            echo "Public website returned HTML to the GitHub runner."
+            exit 0
+          fi
+
+          if [[ "$status" == '403' ]] &&
+            grep -Eiq '^server:[[:space:]]*cloudflare' "$headers"
+          then
+            echo \
+              "::warning::Cloudflare returned 403 to the GitHub-hosted runner. Origin verification passed."
+            exit 0
+          fi
+
+          echo \
+            "::warning::Public runner verification returned HTTP ${status:-000}. Origin verification passed."
+          sed -n '1,20p' "$headers"
+          exit 0

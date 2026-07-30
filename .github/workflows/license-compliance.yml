@@ -1,0 +1,83 @@
+name: Third-party license compliance
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/license-compliance.yml'
+      - '.gitignore'
+      - 'README.md'
+      - 'THIRD_PARTY_NOTICES.md'
+      - 'config/third-party-license-policy.json'
+      - 'docs/third-party-licensing.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'scripts/audit-third-party-licenses.mjs'
+      - 'scripts/collect-third-party-license-evidence.mjs'
+      - 'scripts/sync-third-party-license-files.mjs'
+      - 'src/app/AppLayout.jsx'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/license-compliance.yml'
+      - '.gitignore'
+      - 'README.md'
+      - 'THIRD_PARTY_NOTICES.md'
+      - 'config/third-party-license-policy.json'
+      - 'docs/third-party-licensing.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'scripts/audit-third-party-licenses.mjs'
+      - 'scripts/collect-third-party-license-evidence.mjs'
+      - 'scripts/sync-third-party-license-files.mjs'
+      - 'src/app/AppLayout.jsx'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check license scripts
+        run: |
+          node --check scripts/audit-third-party-licenses.mjs
+          node --check scripts/collect-third-party-license-evidence.mjs
+          node --check scripts/sync-third-party-license-files.mjs
+      - name: Generate bundled license notices
+        run: |
+          pnpm licenses:sync
+          test -f public/legal/third-party/index.html
+          test -f public/legal/third-party/NOTICE.txt
+          grep -F 'Portions © 2025 Reown, Inc. All Rights Reserved.' public/legal/third-party/NOTICE.txt
+          grep -F 'Copyright ConsenSys Software Inc. 2022. All rights reserved.' public/legal/third-party/NOTICE.txt
+      - name: Build frontend with notices
+        run: pnpm build
+      - name: Generate dependency audit report
+        id: audit
+        continue-on-error: true
+        run: pnpm licenses:audit
+      - name: Collect unresolved-license evidence
+        if: always()
+        run: pnpm licenses:evidence
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: third-party-license-audit
+          path: .license-audit/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Report unresolved licenses
+        if: steps.audit.outcome == 'failure'
+        run: echo 'The build is valid, but the dependency audit still contains release blockers. Review the uploaded report.'

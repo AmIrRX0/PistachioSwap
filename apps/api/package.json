@@ -1,0 +1,49 @@
+{
+  "name": "@pistachio/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "start": "tsx --env-file=.env src/server.ts",
+    "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
+    "debug:zero-x-live": "tsx --env-file=.env scripts/debug-zero-x-live.ts",
+    "debug:cross-chain-providers": "tsx --env-file=.env scripts/debug-cross-chain-providers.ts",
+    "diagnose:alchemy-portfolio": "tsx --env-file=.env scripts/diagnose-alchemy-portfolio.ts",
+    "diagnose:market-tokens": "tsx --env-file=.env scripts/diagnose-market-tokens.ts",
+    "diagnose:market-cache": "tsx --env-file=.env scripts/diagnose-market-cache.ts",
+    "diagnose:dexpaprika": "tsx --env-file=.env scripts/diagnose-dexpaprika.ts",
+    "audit:market-catalog": "tsx --env-file=.env scripts/audit-market-catalog.ts",
+    "market-catalog:bootstrap": "tsx --env-file=.env scripts/bootstrap-market-catalog.ts",
+    "fallback-tokens:build": "node -e \"console.error('Legacy broad fallback-token build is disabled for launch. Use shapeshift-assets:sync for the local token catalog, or fallback-tokens:build:legacy only for deliberate debugging.'); process.exit(1)\"",
+    "fallback-tokens:audit": "node -e \"console.error('Legacy broad fallback-token audit is disabled for launch. Use shapeshift-assets:audit for the local token catalog, or fallback-tokens:audit:legacy only for deliberate debugging.'); process.exit(1)\"",
+    "fallback-tokens:build:legacy": "tsx --env-file=.env scripts/build-fallback-token-catalog.ts",
+    "fallback-tokens:audit:legacy": "tsx --env-file=.env scripts/audit-fallback-token-catalog.ts",
+    "shapeshift-assets:sync": "tsx --env-file=.env scripts/sync-shapeshift-asset-catalog.ts",
+    "shapeshift-assets:audit": "tsx --env-file=.env scripts/audit-shapeshift-asset-catalog.ts",
+    "uniswap-volume-tokens:build": "tsx --env-file=.env scripts/build-uniswap-volume-token-catalog.ts",
+    "uniswap-volume-tokens:audit": "tsx --env-file=.env scripts/audit-uniswap-volume-token-catalog.ts",
+    "diagnose:cross-chain": "tsx --env-file=.env scripts/diagnose-cross-chain.ts",
+    "diagnose:official-token": "tsx scripts/diagnose-official-token.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@chainflip/sdk": "^2.2.1",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@pancakeswap/sdk": "5.9.0",
+    "@pancakeswap/smart-router": "7.6.1",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.0.0",
+    "pg": "^8.16.3",
+    "viem": "2.37.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.7",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.0"
+  }
+}

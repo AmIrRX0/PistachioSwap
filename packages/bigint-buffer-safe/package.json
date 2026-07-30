@@ -1,0 +1,21 @@
+{
+  "name": "bigint-buffer",
+  "version": "1.1.6-pistachio.1",
+  "private": true,
+  "description": "Pure JavaScript compatibility replacement used to avoid the vulnerable bigint-buffer native binding.",
+  "main": "index.cjs",
+  "browser": "index.cjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

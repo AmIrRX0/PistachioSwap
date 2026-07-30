@@ -1,0 +1,237 @@
+.ps-token-selector-dialog {
+    width: min(460px, calc(100vw - 24px));
+    height: min(700px, calc(100dvh - 32px));
+    border-color: #2c2c2c;
+    border-radius: 20px;
+    background: #131313;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 64%);
+    color: #f2f2f2;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+.ps-token-selector-header {
+    padding: 18px 18px 14px;
+}
+
+.ps-token-selector-header h2 {
+    color: #f2f2f2;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+}
+
+.ps-token-selector-close {
+    color: #9b9b9b;
+    transition: color 120ms ease, background-color 120ms ease;
+}
+
+.ps-token-selector-close:hover {
+    background: #202020;
+    color: #f2f2f2;
+}
+
+.ps-token-search-wrapper {
+    padding: 0 18px 14px;
+}
+
+.ps-token-search {
+    height: 55px;
+    gap: 11px;
+    padding: 0 12px 0 17px;
+    border-color: transparent;
+    border-radius: 17px;
+    background: #202020;
+    color: #969696;
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ps-token-search:focus-within {
+    border-color: transparent;
+    background: #222222;
+    box-shadow: inset 0 0 0 1px #3b3b3b;
+}
+
+.ps-token-search input {
+    color: #f2f2f2;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+}
+
+.ps-token-search input::placeholder {
+    color: #969696;
+}
+
+.ps-network-trigger {
+    max-width: 154px;
+    color: #c8c8c8;
+    font-size: 13px;
+    font-weight: 450;
+    transition: color 120ms ease, background-color 120ms ease;
+}
+
+.ps-network-trigger:hover,
+.ps-network-trigger[aria-expanded='true'] {
+    background: #2a2a2a;
+    color: #f2f2f2;
+}
+
+.ps-network-menu {
+    border-color: #303030;
+    background: #171717;
+}
+
+.ps-token-selector-scroll {
+    padding: 0 10px 18px;
+    scrollbar-color: #444 #131313;
+}
+
+.ps-token-selector-scroll::-webkit-scrollbar-track {
+    background: #131313;
+}
+
+.ps-token-selector-scroll::-webkit-scrollbar-thumb {
+    border-color: #131313;
+    background: #444;
+}
+
+.ps-token-icon {
+    isolation: isolate;
+    z-index: 0;
+    overflow: visible;
+}
+
+.ps-token-logo-frame,
+.ps-token-logo-fallback {
+    position: relative;
+    z-index: 1;
+}
+
+.ps-token-network-badge {
+    z-index: 3;
+    right: -4px;
+    bottom: -3px;
+    width: 20px;
+    height: 20px;
+    border-color: #131313;
+    background: #252525;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 5%);
+    transform: translateZ(0);
+}
+
+.ps-token-section {
+    padding-bottom: 10px;
+}
+
+.ps-token-section-title {
+    height: 42px;
+    padding: 0 12px;
+    color: #909090;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.ps-token-section-heading {
+    gap: 9px;
+}
+
+.ps-token-section-heading svg {
+    width: 17px;
+    height: 17px;
+}
+
+.ps-token-section-action {
+    color: #9a9a9a;
+    font-size: 14px;
+    transition: color 120ms ease;
+}
+
+.ps-token-row {
+    min-height: 72px;
+    gap: 13px;
+    overflow: visible;
+    padding: 10px 12px;
+    border-radius: 14px;
+    color: #f2f2f2;
+    transition: background-color 110ms ease, opacity 110ms ease;
+}
+
+.ps-token-row:hover,
+.ps-token-row-selected {
+    background: #202020;
+}
+
+.ps-token-row-selected {
+    box-shadow: none;
+}
+
+.ps-token-row-details {
+    gap: 5px;
+}
+
+.ps-token-row-details strong {
+    color: #f2f2f2;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.018em;
+    line-height: 1.15;
+}
+
+.ps-token-row-meta {
+    gap: 6px;
+    color: #888;
+    font-size: 14px;
+    letter-spacing: -0.006em;
+}
+
+.ps-token-row-value {
+    min-width: 84px;
+    gap: 4px;
+    color: #919191;
+    font-size: 14px;
+    letter-spacing: -0.008em;
+}
+
+.ps-token-row-value strong {
+    color: #f2f2f2;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.018em;
+}
+
+.ps-token-row-hidden {
+    opacity: 0.76;
+}
+
+.ps-token-risk-label {
+    color: #ec9eb2;
+}
+
+.ps-hidden-token-explanation,
+.ps-token-inline-status {
+    color: #777;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .ps-token-selector-dialog {
+        width: 100%;
+        height: calc(100dvh - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 20px 20px 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ps-token-row,
+    .ps-token-selector-close,
+    .ps-token-search,
+    .ps-network-trigger,
+    .ps-token-section-action {
+        transition: none;
+    }
+}

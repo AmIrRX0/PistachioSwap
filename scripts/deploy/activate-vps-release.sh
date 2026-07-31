@@ -19,7 +19,6 @@ PERSISTENT_API_ENV="$APP_DIR/env/api.env"
 RUNTIME_DIR="$APP_DIR/.runtime"
 REDUCED_API_ENV="$RUNTIME_DIR/api.env"
 NODE_HOME="$HOME/.local/nodejs/current"
-API_LOG="$RUNTIME_DIR/api.log"
 API_PID_FILE="$RUNTIME_DIR/api.pid"
 API_PORT='3006'
 COREPACK_BIN=''
@@ -31,7 +30,7 @@ if [[ -x "$NODE_HOME/bin/node" ]]; then
     hash -r
 fi
 
-for command in node corepack curl awk readlink ss; do
+for command in node npm corepack curl awk readlink ss; do
     command -v "$command" >/dev/null 2>&1 || {
         echo "Required VPS command is missing: $command" >&2
         exit 1
@@ -297,6 +296,18 @@ stop_api() {
     done
 }
 
+ensure_pm2() {
+    if ! command -v pm2 >/dev/null 2>&1; then
+        npm install --global 'pm2@6'
+        hash -r
+    fi
+
+    command -v pm2 >/dev/null 2>&1 || {
+        echo "PM2 installation did not provide a pm2 executable." >&2
+        exit 1
+    }
+}
+
 wait_for_health() {
     local attempts="$1"
 
@@ -316,41 +327,35 @@ wait_for_health() {
     return 1
 }
 
-start_manual_api() {
+reload_pm2_release() {
     local target="$1"
 
-    cd "$target"
-    : > "$API_LOG"
-    nohup env \
-        NODE_ENV=production \
-        PORT="$API_PORT" \
-        HOST=127.0.0.1 \
-        "$COREPACK_BIN" pnpm --filter @pistachio/api start \
-        >> "$API_LOG" 2>&1 < /dev/null &
-
-    local manual_pid=$!
-    printf '%s\n' "$manual_pid" > "$API_PID_FILE"
+    PISTACHIO_PUBLIC_ROOT="$target" \
+        pm2 startOrReload "$target/ecosystem.config.cjs" \
+            --only "$API_SERVICE" \
+            --update-env
 }
 
 start_release() {
     local target="$1"
 
+    ensure_pm2
+    activate_release "$target"
     stop_api
-    start_manual_api "$target"
+    reload_pm2_release "$target"
     wait_for_health 30
 }
 
 rollback() {
     echo "Deployment failed; rolling back."
-    stop_api
 
     if [[ -n "$previous_target" && -d "$previous_target" ]]; then
         ensure_frontend_compatibility "$previous_target"
-        activate_release "$previous_target"
         if ! start_release "$previous_target"; then
             echo "Rollback release did not become healthy." >&2
         fi
     else
+        pm2 delete "$API_SERVICE" >/dev/null 2>&1 || true
         rm -f "$CURRENT_LINK"
     fi
 }
@@ -358,41 +363,7 @@ rollback() {
 ensure_frontend_compatibility "$previous_target"
 
 if ! start_release "$RELEASE_DIR"; then
-    tail -n 120 "$API_LOG" 2>/dev/null || true
-    rollback
-    exit 1
-fi
-
-activate_release "$RELEASE_DIR"
-
-release_process_found=false
-current_uid="$(id -u)"
-
-for proc_dir in /proc/[0-9]*; do
-    [[ -r "$proc_dir/status" && -r "$proc_dir/cmdline" ]] || continue
-    [[ "$(process_uid "${proc_dir##*/}")" == "$current_uid" ]] || continue
-
-    command_line="$(
-        tr '\0' ' ' < "$proc_dir/cmdline" 2>/dev/null || true
-    )"
-    if [[
-        "$command_line" != *"src/server.ts"* &&
-        "$command_line" != *"@pistachio/api"*
-    ]]; then
-        continue
-    fi
-
-    process_cwd="$(readlink -f "$proc_dir/cwd" 2>/dev/null || true)"
-    if [[ "$process_cwd" == "$RELEASE_DIR"* ]]; then
-        release_process_found=true
-        break
-    fi
-done
-
-if [[ "$release_process_found" != true ]]; then
-    echo \
-        "API responded, but no API process is running from the activated release." \
-        >&2
+    pm2 logs "$API_SERVICE" --lines 120 --nostream 2>/dev/null || true
     rollback
     exit 1
 fi

@@ -43,11 +43,185 @@ const MANAGER_KEY = Symbol.for('pistachioswap.pistachio-wallet.manager')
 const ACTIVE_SESSION_VAULT_PREFERENCE = 'activeSessionVaultId'
 const LAST_WALLET_ACTIVITY_PREFERENCE = 'lastWalletActivityAt'
 const SESSION_RESUME_ELIGIBLE_PREFERENCE = 'sessionResumeEligible'
+const RPC_QUANTITY_PATTERN = /^0x(?:0|[1-9a-f][0-9a-f]*)$/iu
 
 function managerError(code, message) {
     const error = new Error(message)
     error.code = code
     return error
+}
+
+function parseRpcQuantity(value, name) {
+    if (typeof value !== 'string' || !RPC_QUANTITY_PATTERN.test(value)) {
+        throw managerError(
+            'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+            `The public RPC returned an invalid transaction ${name}.`,
+        )
+    }
+    return BigInt(value)
+}
+
+function toRpcQuantity(value, name) {
+    let quantity
+    try {
+        quantity = BigInt(value)
+    } catch {
+        throw managerError(
+            'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+            `The transaction ${name} is invalid.`,
+        )
+    }
+    if (quantity < 0n) {
+        throw managerError(
+            'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+            `The transaction ${name} is invalid.`,
+        )
+    }
+    return `0x${quantity.toString(16)}`
+}
+
+function normalTransactionType(transaction) {
+    const value = transaction?.type
+    if (value === undefined || value === null) {
+        return transaction?.maxFeePerGas !== undefined ||
+            transaction?.maxPriorityFeePerGas !== undefined
+            ? 2
+            : 0
+    }
+    if (value === 0 || value === '0' || value === '0x0' || value === 'legacy') return 0
+    if (value === 2 || value === '2' || value === '0x2' || value === 'eip1559') return 2
+    throw managerError(
+        'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+        'Pistachio Wallet supports only legacy and EIP-1559 transactions.',
+    )
+}
+
+function rpcTransactionForEstimate(transaction) {
+    const request = {
+        from: getAddress(transaction.from),
+        to: getAddress(transaction.to),
+        data: transaction.data ?? '0x',
+        value: toRpcQuantity(transaction.value ?? 0n, 'value'),
+    }
+    if (transaction.nonce !== undefined && transaction.nonce !== null) {
+        request.nonce = toRpcQuantity(transaction.nonce, 'nonce')
+    }
+    if (transaction.gas !== undefined && transaction.gas !== null) {
+        request.gas = toRpcQuantity(transaction.gas, 'gas limit')
+    } else if (transaction.gasLimit !== undefined && transaction.gasLimit !== null) {
+        request.gas = toRpcQuantity(transaction.gasLimit, 'gas limit')
+    }
+    if (transaction.gasPrice !== undefined && transaction.gasPrice !== null) {
+        request.gasPrice = toRpcQuantity(transaction.gasPrice, 'gas price')
+    }
+    if (transaction.maxFeePerGas !== undefined && transaction.maxFeePerGas !== null) {
+        request.maxFeePerGas = toRpcQuantity(transaction.maxFeePerGas, 'maximum fee')
+    }
+    if (transaction.maxPriorityFeePerGas !== undefined && transaction.maxPriorityFeePerGas !== null) {
+        request.maxPriorityFeePerGas = toRpcQuantity(
+            transaction.maxPriorityFeePerGas,
+            'priority fee',
+        )
+    }
+    request.type = normalTransactionType(transaction) === 2 ? '0x2' : '0x0'
+    return request
+}
+
+async function prepareNormalTransaction(manager, transaction, context) {
+    const rpcUrl = manager.rpcUrlForChain(context.chainId)
+    const rpcChainId = await manager.rpcRequest(
+        context.chainId,
+        'eth_chainId',
+        [],
+        rpcUrl,
+    )
+    manager.assertSigningContext(context)
+    if (parseRpcChainId(rpcChainId) !== context.chainId) {
+        throw managerError(
+            'PISTACHIO_RPC_CHAIN_MISMATCH',
+            'The selected public RPC reported a different chain.',
+        )
+    }
+
+    const request = {
+        ...transaction,
+        chainId: context.chainId,
+        from: context.address,
+    }
+    request.type = normalTransactionType(request)
+
+    if (request.nonce === undefined || request.nonce === null) {
+        request.nonce = parseRpcQuantity(
+            await manager.rpcRequest(
+                context.chainId,
+                'eth_getTransactionCount',
+                [context.address, 'pending'],
+                rpcUrl,
+            ),
+            'nonce',
+        )
+        manager.assertSigningContext(context)
+    }
+
+    if (request.type === 0) {
+        if (
+            request.maxFeePerGas !== undefined ||
+            request.maxPriorityFeePerGas !== undefined
+        ) {
+            throw managerError(
+                'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+                'A legacy transaction cannot contain EIP-1559 fee fields.',
+            )
+        }
+        if (request.gasPrice === undefined || request.gasPrice === null) {
+            request.gasPrice = parseRpcQuantity(
+                await manager.rpcRequest(
+                    context.chainId,
+                    'eth_gasPrice',
+                    [],
+                    rpcUrl,
+                ),
+                'gas price',
+            )
+            manager.assertSigningContext(context)
+        }
+    } else {
+        if (request.gasPrice !== undefined && request.gasPrice !== null) {
+            throw managerError(
+                'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+                'An EIP-1559 transaction cannot contain a legacy gas price.',
+            )
+        }
+        if (
+            request.maxFeePerGas === undefined ||
+            request.maxFeePerGas === null ||
+            request.maxPriorityFeePerGas === undefined ||
+            request.maxPriorityFeePerGas === null
+        ) {
+            throw managerError(
+                'PISTACHIO_TRANSACTION_PREPARATION_FAILED',
+                'The EIP-1559 transaction is missing its fee fields.',
+            )
+        }
+    }
+
+    if (
+        (request.gas === undefined || request.gas === null) &&
+        (request.gasLimit === undefined || request.gasLimit === null)
+    ) {
+        request.gas = parseRpcQuantity(
+            await manager.rpcRequest(
+                context.chainId,
+                'eth_estimateGas',
+                [rpcTransactionForEstimate(request)],
+                rpcUrl,
+            ),
+            'gas limit',
+        )
+        manager.assertSigningContext(context)
+    }
+
+    return { request, rpcUrl }
 }
 
 function normalizeAllowedChainId(value) {
@@ -287,7 +461,11 @@ export const methods = {
         if (transaction?.from && getAddress(transaction.from) !== getAddress(context.address)) {
             throw managerError('PISTACHIO_ACCOUNT_MISMATCH', 'Transaction account mismatch.')
         }
-        const request = { ...transaction, chainId: context.chainId, from: context.address }
+        const { request, rpcUrl } = await prepareNormalTransaction(
+            this,
+            transaction,
+            context,
+        )
         await this.reviewQueue.request({
             walletAddress: context.address,
             chainId: context.chainId,
@@ -300,12 +478,6 @@ export const methods = {
             signedTransaction = (await this.client.request('signTransaction', { transaction: request, mode: 'normal' })).signedTransaction
             this.assertSigningContext(context)
             await validateLocallySignedTransaction({ signedTransaction, request, walletAddress: context.address, mode: 'normal' })
-            const rpcUrl = this.rpcUrlForChain(context.chainId)
-            const rpcChainId = await this.rpcRequest(context.chainId, 'eth_chainId', [], rpcUrl)
-            this.assertSigningContext(context)
-            if (parseRpcChainId(rpcChainId) !== context.chainId) {
-                throw managerError('PISTACHIO_RPC_CHAIN_MISMATCH', 'The selected public RPC reported a different chain.')
-            }
             const transactionHash = await this.rpcRequest(context.chainId, 'eth_sendRawTransaction', [signedTransaction], rpcUrl)
             this.assertSigningContext(context)
             if (!/^0x[0-9a-f]{64}$/iu.test(transactionHash ?? '')) throw managerError('PISTACHIO_TRANSACTION_BROADCAST_FAILED', 'The public RPC returned an invalid transaction hash.')
@@ -353,4 +525,12 @@ export const methods = {
         if (method === 'eth_sendTransaction') return this.sendTransaction(params[0])
         throw managerError(4200, `Pistachio Wallet does not support ${method}.`)
     }
+}
+
+export const walletManagerSigningInternals = {
+    normalTransactionType,
+    parseRpcQuantity,
+    prepareNormalTransaction,
+    rpcTransactionForEstimate,
+    toRpcQuantity,
 }

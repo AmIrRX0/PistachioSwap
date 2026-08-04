@@ -62,12 +62,20 @@ export function useSwapRouting({ quoteEndpoint, walletState, nativeBalance, sell
         hasMixedSwapChains,
         isBscSwap,
         sponsorshipConfig,
+        // Compatibility aliases for the controller while the old 0x hook remains mounted but quote-disabled.
+        gasAssistConfig: sponsorshipConfig,
         preferredExecution,
         routingMode: deriveRoutingMode({
             sellChainId,
             buyChainId,
             gasAssistPreferred: preferredExecution.mode === PREPAID_SPONSORSHIP_MODE,
         }),
-        modes: { CROSS_CHAIN, NORMAL_SWAP_MODE, PREPAID_SPONSORSHIP_MODE, SAME_CHAIN_GASLESS_OR_ASSISTED },
+        modes: {
+            CROSS_CHAIN,
+            NORMAL_SWAP_MODE,
+            PREPAID_SPONSORSHIP_MODE,
+            SAME_CHAIN_GASLESS_OR_ASSISTED,
+            ZERO_X_GASLESS_MODE: PREPAID_SPONSORSHIP_MODE,
+        },
     }
 }

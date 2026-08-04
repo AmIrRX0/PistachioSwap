@@ -14,7 +14,13 @@ const MAX_MESSAGE_CHARS = 128 * 1024
 const MAX_TYPED_DATA_CHARS = 256 * 1024
 const MAX_TRANSACTION_CHARS = 512 * 1024
 const MAX_PROVIDER_PARAMS = 4
-const RPC_METHODS = new Set(['eth_chainId', 'eth_sendRawTransaction'])
+const RPC_METHODS = new Set([
+    'eth_chainId',
+    'eth_getTransactionCount',
+    'eth_gasPrice',
+    'eth_estimateGas',
+    'eth_sendRawTransaction',
+])
 const SESSION_CLEAR_LOCK_REASONS = new Set([
     'account-mismatch',
     'chain-invariant',

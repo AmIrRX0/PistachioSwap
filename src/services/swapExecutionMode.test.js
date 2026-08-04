@@ -6,6 +6,7 @@ import {
     deriveRoutingMode,
     deriveSwapExecution,
     getSwapExecutionMessage,
+    PREPAID_SPONSORSHIP_MODE,
     SAME_CHAIN_GASLESS_OR_ASSISTED,
     SAME_CHAIN_STANDARD,
 } from './swapExecutionMode.js'
@@ -21,7 +22,7 @@ const base = {
     sellToken,
     buyToken,
     sellAmount: '1000000',
-    gasAssistConfig: { enabled: true, mode: 'zero-x-gasless' },
+    gasAssistConfig: { enabled: true },
     gasAssistConfigStatus: 'success',
     minimumNativeBalance: 100n,
 }
@@ -46,16 +47,16 @@ describe('swap execution mode', () => {
         })
     })
 
-    it('selects Gas Assist when BNB is zero or below the configured normal-gas reserve', () => {
-        expect(deriveSwapExecution(base)).toEqual({ mode: 'zero-x-gasless', reason: 'insufficient-native-balance' })
-        expect(deriveSwapExecution({ ...base, nativeBalance: 99n })).toEqual({ mode: 'zero-x-gasless', reason: 'insufficient-native-balance' })
+    it('selects prepaid Gas Assist when BNB is zero or below the configured normal-gas reserve', () => {
+        expect(deriveSwapExecution(base)).toEqual({ mode: PREPAID_SPONSORSHIP_MODE, reason: 'insufficient-native-balance' })
+        expect(deriveSwapExecution({ ...base, nativeBalance: 99n })).toEqual({ mode: PREPAID_SPONSORSHIP_MODE, reason: 'insufficient-native-balance' })
         expect(deriveSwapExecution({ ...base, nativeBalance: 100n })).toEqual({ mode: 'normal', reason: null })
     })
 
-    it('does not enter Gasless on the wrong chain, native sell, or disabled config', () => {
+    it('does not enter prepaid Gas Assist on the wrong chain, native sell, or disabled config', () => {
         expect(deriveSwapExecution({ ...base, chainId: 1 })).toMatchObject({ mode: null, reason: 'wrong-chain' })
         expect(deriveSwapExecution({ ...base, sellToken: { ...sellToken, isNative: true } })).toMatchObject({ mode: null, reason: 'native-sell-token' })
-        expect(deriveSwapExecution({ ...base, gasAssistConfig: { enabled: false, mode: 'disabled' } })).toMatchObject({ mode: null, reason: 'gas-assist-disabled' })
+        expect(deriveSwapExecution({ ...base, gasAssistConfig: { enabled: false } })).toMatchObject({ mode: null, reason: 'gas-assist-disabled' })
     })
 
     it('distinguishes config loading, errors, and disabled responses', () => {
@@ -68,7 +69,7 @@ describe('swap execution mode', () => {
         expect(getSwapExecutionMessage('gas-assist-disabled')).toBe('Gas Assist is currently disabled.')
     })
 
-    it('accepts XAUT-like metadata without symbol or allowlist checks', () => {
+    it('accepts XAUT-like metadata without symbol or frontend allowlist checks', () => {
         const xaut = {
             address: getAddress('0x68749665ff8d2d112fa859aa293f07a622782f38'),
             symbol: 'XAUT',
@@ -76,7 +77,7 @@ describe('swap execution mode', () => {
             isNative: false,
         }
         const result = deriveSwapExecution({ ...base, sellToken: xaut })
-        expect(result).toEqual({ mode: 'zero-x-gasless', reason: 'insufficient-native-balance' })
+        expect(result).toEqual({ mode: PREPAID_SPONSORSHIP_MODE, reason: 'insufficient-native-balance' })
         expect(xaut.symbol).toBe('XAUT')
     })
 
@@ -86,7 +87,7 @@ describe('swap execution mode', () => {
         ['native BNB', '0x0000000000000000000000000000000000000000'],
     ])('preserves the selected %s output', (_symbol, address) => {
         const selectedBuy = { ...buyToken, address }
-        expect(deriveSwapExecution({ ...base, buyToken: selectedBuy }).mode).toBe('zero-x-gasless')
+        expect(deriveSwapExecution({ ...base, buyToken: selectedBuy }).mode).toBe(PREPAID_SPONSORSHIP_MODE)
         expect(selectedBuy.address).toBe(address)
     })
 })

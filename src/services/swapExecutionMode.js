@@ -1,7 +1,7 @@
 import { isAddress } from 'viem'
 
 export const NORMAL_SWAP_MODE = 'normal'
-export const ZERO_X_GASLESS_MODE = 'zero-x-gasless'
+export const PREPAID_SPONSORSHIP_MODE = 'prepaid-sponsorship'
 export const SAME_CHAIN_STANDARD = 'SAME_CHAIN_STANDARD'
 export const SAME_CHAIN_GASLESS_OR_ASSISTED = 'SAME_CHAIN_GASLESS_OR_ASSISTED'
 export const CROSS_CHAIN = 'CROSS_CHAIN'
@@ -80,8 +80,8 @@ export function deriveSwapExecution({
         return { mode: null, reason: 'gas-assist-config-loading' }
     }
     if (gasAssistConfigStatus === 'error') return { mode: null, reason: 'gas-assist-config-error' }
-    if (gasAssistConfig?.enabled !== true || gasAssistConfig?.mode !== ZERO_X_GASLESS_MODE) {
+    if (gasAssistConfig?.enabled !== true) {
         return { mode: null, reason: 'gas-assist-disabled' }
     }
-    return { mode: ZERO_X_GASLESS_MODE, reason: 'insufficient-native-balance' }
+    return { mode: PREPAID_SPONSORSHIP_MODE, reason: 'insufficient-native-balance' }
 }

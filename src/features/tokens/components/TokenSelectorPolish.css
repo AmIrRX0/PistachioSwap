@@ -61,6 +61,10 @@
     letter-spacing: -0.012em;
 }
 
+.ps-token-search input:focus-visible {
+    outline: none;
+}
+
 .ps-token-search input::placeholder {
     color: #969696;
 }

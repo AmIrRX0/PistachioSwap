@@ -12,7 +12,7 @@ import { motion } from 'motion/react'
  */
 export default function SameChainReviewDialog({
     open, onOpenChange, contentRef, reducedMotion, activeAmountSide, buyAmount,
-    sellAmount, buyToken, sellToken, maximumSold, minimumReceived, quoteProvider,
+    sellAmount, buyToken, sellToken, maximumSold, minimumReceived,
     slippageLabel, reviewError, confirmDisabled, confirmLabel, onConfirm,
 }) {
     return <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -24,7 +24,7 @@ export default function SameChainReviewDialog({
                     <Dialog.Close className="swap-review-close" aria-label="Close review" disabled={confirmDisabled}><X aria-hidden="true" /></Dialog.Close>
                     <dl className="swap-review-details">
                         {activeAmountSide === 'buy' ? <><div className="swap-review-detail-row"><dt>You receive</dt><dd>{buyAmount} {buyToken?.symbol}</dd></div><div className="swap-review-detail-row"><dt>You pay at most</dt><dd>{maximumSold ?? `${sellAmount} ${sellToken?.symbol}`}</dd></div></> : <><div className="swap-review-detail-row"><dt>You pay</dt><dd>{sellAmount} {sellToken?.symbol}</dd></div><div className="swap-review-detail-row"><dt>You receive at least</dt><dd>{minimumReceived ?? `${buyAmount} ${buyToken?.symbol}`}</dd></div></>}
-                        <div className="swap-review-detail-row"><dt>Provider</dt><dd>{quoteProvider ?? 'Best route'}</dd></div>
+                        <div className="swap-review-detail-row"><dt>Routing</dt><dd>Best available route</dd></div>
                         <div className="swap-review-detail-row"><dt>Max slippage</dt><dd>{slippageLabel}</dd></div>
                     </dl>
                     {reviewError && <p className="swap-review-status" role="status">{reviewError}</p>}

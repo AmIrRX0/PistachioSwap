@@ -3,7 +3,7 @@ const messages = {
     ABOVE_SPONSOR_MAXIMUM: 'The amount is above the Gas Assist limit.',
     GAS_ASSIST_RULE_NOT_FOUND: 'Gas Assist is not available for this token yet.',
     SWAP_INTENT_NOT_CUSTOM_CONTRACT: 'This route cannot use Gas Assist.',
-    ONCHAIN_APPROVAL_REQUIRED: 'This token needs an approval before it can be swapped.',
+    ONCHAIN_APPROVAL_REQUIRED: 'This token needs a one-time on-chain approval before it can be swapped.',
     UNLIMITED_PERMIT_NOT_ALLOWED: 'This token requested an unsafe unlimited approval.',
     SELL_VALUE_TOO_LOW: 'The swap amount is too small for Gas Assist.',
     GAS_ASSIST_FEE_NOT_REPRESENTABLE: 'The Gas Assist fee is too large for this trade.',

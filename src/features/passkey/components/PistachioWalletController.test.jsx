@@ -614,7 +614,7 @@ describe('Pistachio Wallet saved-wallet behavior', () => {
         render(<PistachioWalletController />)
 
         expect(screen.getByText('This wallet is saved in this browser, but its passkey is unavailable.')).toBeTruthy()
-        expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+        expect(screen.getByRole('button', { name: 'Try passkey again' })).toBeTruthy()
         expect(screen.getByRole('button', { name: /^Restore using recovery phrase/ })).toBeTruthy()
         expect(screen.getByRole('button', { name: /^Restore encrypted backup/ })).toBeTruthy()
         expect(screen.getByRole('button', { name: /^Import private key/ })).toBeTruthy()

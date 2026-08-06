@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ getWalletTokens: vi.fn() }))
 
 vi.mock('../src/providers/alchemy/wallet-tokens.js', () => ({
-    WALLET_TOKEN_CLASSIFICATION_VERSION: 4,
+    WALLET_TOKEN_CLASSIFICATION_VERSION: 6,
     getWalletTokens: mocks.getWalletTokens,
     isCurrentWalletTokenRecord: (value: unknown) =>
         typeof value === 'object' && value !== null &&
@@ -103,7 +103,7 @@ describe('Alchemy Portfolio wallet cache', () => {
     it.each([
         ['v3', { classificationVersion: 3, tokens: [] }],
         ['malformed', { classificationVersion: 6, tokens: 'invalid' }],
-    ])('ignores a %s legacy cache entry under v5', async (_name, value) => {
+    ])('ignores a %s legacy cache entry under v6', async (_name, value) => {
         setAlchemyPortfolioWalletCacheForTest({
             walletAddress: walletA,
             chainIds: [56],

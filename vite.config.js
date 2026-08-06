@@ -24,5 +24,17 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      // Keep collection anchored to workspace test locations while still
+      // supporting package-local Vitest invocations such as `pnpm --filter
+      // @pistachio/api exec vitest run test/...`.
+      include: [
+        'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        'apps/api/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        'packages/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        'test/**/*.{test,spec}.{js,jsx,ts,tsx}',
+      ],
+      exclude: ['**/node_modules/**', '**/dist/**', 'tests/playwright/**'],
+    },
   }
 })

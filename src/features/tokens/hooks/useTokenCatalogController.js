@@ -420,6 +420,9 @@ export function useTokenCatalogController({ swapChainId, walletState, tokensConf
         fallbackChainLogo,
         nativeBalance,
         walletTokens,
+        // Excludes the locally synthesized native fallback, so a failed backend
+        // response is never mistaken for usable wallet data.
+        backendWalletTokens: normalizedWalletTokens,
         availableTokens,
         walletTokenError,
         walletTokenFailedChainIds,

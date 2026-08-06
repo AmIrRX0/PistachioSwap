@@ -1,6 +1,7 @@
 import { LayoutGroup } from 'motion/react'
 import GasAssistBanner from '../../gas-assist/components/GasAssistBanner.jsx'
 import SwapTokenPanel from './SwapTokenPanel.jsx'
+import SwapBalanceNotice from './SwapBalanceNotice.jsx'
 import SwapDirectionButton from './SwapDirectionButton.jsx'
 import SwapPrimaryAction from './SwapPrimaryAction.jsx'
 import SwapDetails from './SwapDetails.jsx'
@@ -22,6 +23,10 @@ export default function SwapCard({ sellPanel, buyPanel, direction, primaryAction
                     <SwapTokenPanel {...buyPanel} />
                 </div>
             </LayoutGroup>
+            <SwapBalanceNotice
+                notice={sellPanel.balance?.notice ?? null}
+                onRetry={sellPanel.balance?.onRetry ?? null}
+            />
             <SwapPrimaryAction {...primaryAction} />
             <SwapDetails {...details} />
             {gasAssistBanner && <GasAssistBanner {...gasAssistBanner} />}

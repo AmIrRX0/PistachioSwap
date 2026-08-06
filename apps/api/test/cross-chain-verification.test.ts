@@ -122,14 +122,15 @@ describe('curated 25-chain verification', () => {
 
 describe('excluded-provider and frontend-secret guards', () => {
     it('keeps the excluded provider out of runtime source and UI labels', () => {
+        // `src` already covers every UI component after the feature-folder move.
         const runtimeFiles = [
             ...filesUnder(resolve(ROOT, 'apps/api/src')),
             ...filesUnder(resolve(ROOT, 'src')),
         ].filter(isRuntimeSource)
-        const uiFiles = filesUnder(resolve(ROOT, 'src/components')).filter(isRuntimeSource)
 
+        expect(runtimeFiles.some((path) => /[\\/]components[\\/]/.test(path)))
+            .toBe(true)
         expectFilesClean(runtimeFiles)
-        expectFilesClean(uiFiles)
     })
 
     it('keeps the excluded provider out of manifests, lockfile, and environment files', () => {

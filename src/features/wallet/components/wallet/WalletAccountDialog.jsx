@@ -14,7 +14,6 @@ import {
     CheckCircle2,
     Copy,
     LogOut,
-    QrCode,
     RefreshCw,
     Send,
     X,
@@ -54,6 +53,10 @@ function portfolioValue(tokens) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     }).format(total)
+}
+
+function pluralize(count, noun) {
+    return `${count} ${noun}${count === 1 ? '' : 's'}`
 }
 
 function hasPositiveBalance(token) {
@@ -534,7 +537,7 @@ export default function WalletAccountDialog({
                     </button>
                     <div>
                         <h2>Portfolio</h2>
-                        <span>{visiblePortfolioAssets.length} assets</span>
+                        <span>{pluralize(visiblePortfolioAssets.length, 'asset')}</span>
                     </div>
                     <button
                         type="button"
@@ -578,7 +581,12 @@ export default function WalletAccountDialog({
                     </button>
                     <div>
                         <h2>Activity</h2>
-                        <span>{visibleActivity.length} confirmed transactions</span>
+                        <span>
+                            {pluralize(
+                                visibleActivity.length,
+                                'confirmed transaction',
+                            )}
+                        </span>
                     </div>
                     <span className="uni-wallet-header-spacer" />
                 </header>

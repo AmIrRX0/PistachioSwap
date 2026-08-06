@@ -8,6 +8,9 @@ import { isCuratedEvmChainId } from '../../../chains.js'
 export const ZERO_X_NATIVE_TOKEN_ADDRESS =
     '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
 
+export const KYBERSWAP_NATIVE_TOKEN_ADDRESS =
+    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+
 export type ProviderTokenIdentity = {
     chainId: number
     address: string
@@ -15,6 +18,7 @@ export type ProviderTokenIdentity = {
     internal: string
     zeroX: string
     uniswap: string
+    kyberSwap: string
     pancake:
         | { kind: 'native' }
         | { kind: 'erc20'; address: string }
@@ -51,6 +55,7 @@ export function normalizeProviderToken({
         internal: normalized,
         zeroX: isNative ? ZERO_X_NATIVE_TOKEN_ADDRESS : normalized,
         uniswap: normalized,
+        kyberSwap: isNative ? KYBERSWAP_NATIVE_TOKEN_ADDRESS : normalized,
         pancake: isNative
             ? { kind: 'native' }
             : { kind: 'erc20', address: normalized },

@@ -1,15 +1,13 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { motion } from 'motion/react'
-import { formatTokenAmount, getProviderDisplayName } from '../services/crossChainRoutes.js'
+import { formatTokenAmount } from '../services/crossChainRoutes.js'
 import { getCuratedEvmChain } from '../../../web3/curatedEvmChains.js'
 import { formatCostUsd } from '../../swap/model/swapDisplay.js'
 
 /**
  * Renders the existing Radix cross-chain review portal from a prepared route view model.
- * @param {{open: boolean, route: object|null, reducedMotion: boolean, activeAmountSide: string, sellToken: object|null, buyToken: object|null, costs: object, preparation: object, routeError: string|null, executionError: string|null, confirmDisabled: boolean, onClose: () => void, onConfirm: () => void}} props Review contract.
- * @returns {import('react').ReactElement|null} Portaled review dialog or null.
- * @sideEffects Radix moves focus and mounts in the app-shell portal; callbacks own wallet/transaction work.
+ * Internal provider identity is deliberately hidden; the backend owns best-route selection.
  */
 export default function CrossChainReviewDialog({
     open,
@@ -92,11 +90,11 @@ export default function CrossChainReviewDialog({
                                                     : 'Calculated at confirmation'
                                     )}</dd>
                                 </div>
-                                {costs.provider !== null && <div><dt>Relay/provider costs</dt><dd>{formatCostUsd(costs.provider)}</dd></div>}
+                                {costs.provider !== null && <div><dt>Routing costs</dt><dd>{formatCostUsd(costs.provider)}</dd></div>}
                                 {costs.appFee !== null && <div><dt>PistachioSwap fee</dt><dd>{costs.appFee}</dd></div>}
                                 <div><dt>Source chain</dt><dd>{getCuratedEvmChain(route.sourceChainId)?.name ?? route.sourceChainId}</dd></div>
                                 <div><dt>Destination chain</dt><dd>{getCuratedEvmChain(route.destinationChainId)?.name ?? route.destinationChainId}</dd></div>
-                                <div><dt>Provider</dt><dd>{getProviderDisplayName(route.provider)}</dd></div>
+                                <div><dt>Routing</dt><dd>Best available route</dd></div>
                                 <div><dt>Estimated arrival</dt><dd>~{route.durationSeconds} seconds</dd></div>
                                 <div><dt>Minimum received</dt><dd>{formatTokenAmount(route.minimumOutputAmount, buyToken?.decimals)} {buyToken?.symbol}</dd></div>
                                 {route.expiresAt && <div><dt>Expires</dt><dd>{route.expiresAt}</dd></div>}

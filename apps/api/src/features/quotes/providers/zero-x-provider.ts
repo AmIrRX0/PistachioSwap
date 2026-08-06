@@ -166,13 +166,16 @@ export function createZeroXProvider({
             }
 
             let estimatedGasUsd: string | null = null
-            try {
-                estimatedGasUsd = networkFeeUsd(
-                    payload.totalNetworkFee,
-                    await getNativeTokenPrice(request.chainId, signal),
-                )
-            } catch {
-                estimatedGasUsd = null
+            const totalNetworkFee = decimalInteger(payload.totalNetworkFee)
+            if (totalNetworkFee) {
+                try {
+                    estimatedGasUsd = networkFeeUsd(
+                        totalNetworkFee,
+                        await getNativeTokenPrice(request.chainId, signal),
+                    )
+                } catch {
+                    estimatedGasUsd = null
+                }
             }
 
             return {

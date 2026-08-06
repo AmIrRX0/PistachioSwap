@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { motion } from 'motion/react'
 import SwapAmountInput from './SwapAmountInput.jsx'
 import SwapQuickAmounts from './SwapQuickAmounts.jsx'
@@ -27,11 +26,6 @@ export default function SwapTokenPanel(props) {
         !isSell ? 'buy-amount-input' : '',
         invalid ? 'sell-amount-insufficient' : '',
     ].filter(Boolean).join(' ')
-
-    useEffect(() => {
-        if (!balance?.notice) return
-        console.warn('[wallet-balance-refresh]', balance.notice)
-    }, [balance?.notice])
 
     return (
         <motion.section
@@ -94,7 +88,6 @@ export default function SwapTokenPanel(props) {
                     {token.balance}{' '}{token.symbol}
                 </button>
             )}
-            {isSell && balance?.notice && <span hidden>{balance.notice}</span>}
         </motion.section>
     )
 }

@@ -860,6 +860,50 @@ button:disabled {
     color: var(--color-text);
 }
 
+.swap-balance-notice {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border: var(--border-standard) solid var(--color-border);
+    border-radius: var(--radius-action);
+    background: var(--color-panel);
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.swap-balance-notice svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    color: var(--color-insufficient);
+}
+
+.swap-balance-notice span {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.swap-balance-retry {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--color-active-tab);
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: background-color 160ms ease;
+}
+
+.swap-balance-retry:hover,
+.swap-balance-retry:focus-visible {
+    background: var(--color-hover);
+}
+
 .primary-action {
     width: 100%;
     height: var(--size-action-height);

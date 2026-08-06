@@ -311,8 +311,8 @@ export function createSwapViewModel(context) {
     const compactRate = sellToken && buyToken
         ? formatCompactRate(inputs.sellAmount, sellToken.symbol, inputs.buyAmount, buyToken.symbol)
         : 'Rate unavailable'
-    const hasUsableWalletTokens = Array.isArray(catalog.walletTokens) &&
-        catalog.walletTokens.length > 0
+    const hasUsableWalletTokens = Array.isArray(catalog.backendWalletTokens) &&
+        catalog.backendWalletTokens.length > 0
     const balanceNotice = catalog.walletTokenError && !hasUsableWalletTokens
         ? 'Wallet balances could not be loaded.'
         : catalog.walletTokenStale === true

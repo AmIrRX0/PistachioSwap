@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { getAddress } from 'viem'
 
 import { walletManagerSigningInternals } from './walletManagerSigning.js'
 
@@ -57,9 +58,10 @@ describe('Pistachio Wallet normal transaction preparation', () => {
             'eth_gasPrice',
             'eth_estimateGas',
         ])
+        // `eth_estimateGas` params are EIP-55 checksummed before they leave the wallet.
         expect(manager.rpcRequest.mock.calls.at(-1)[2]).toEqual([{
             from: ACCOUNT,
-            to: TOKEN,
+            to: getAddress(TOKEN),
             data,
             value: '0x0',
             nonce: '0x7',

@@ -64,6 +64,8 @@ describe('wallet token presentation data', () => {
                 verificationReasons: ['fallback-metadata'],
                 visibility: 'primary',
                 visibilityReasons: ['no-verified-market-pairs'],
+                classificationTier: 'established',
+                classificationReasons: ['established-market-asset'],
             }],
         )
 
@@ -100,6 +102,8 @@ describe('wallet token presentation data', () => {
                 spamReasons: ['moralis-spam-unknown'],
                 securityStatus: 'unknown',
                 visibility: 'unverified',
+                classificationTier: 'hidden',
+                classificationReasons: ['unlisted-token'],
             }],
         )
 
@@ -157,6 +161,8 @@ describe('wallet token presentation data', () => {
             visibility: 'primary',
             possibleSpam: false,
             securityStatus: 'low',
+            classificationTier: 'established',
+            classificationReasons: ['established-market-asset'],
         }
         expect(resolveWalletUsdValue(xaut)).toBe('2963.26944175')
         expect(formatWalletUsdValue(xaut)).toBe('$2,963.27')
@@ -203,6 +209,8 @@ describe('wallet token presentation data', () => {
             spamReasons: [],
             securityStatus: 'low',
             visibility: 'primary',
+            classificationTier: 'established',
+            classificationReasons: ['established-market-asset'],
         }
         const [sameChain] = mergeWalletBalances([
             { chainId: 1, address, symbol: 'SAME', priceUSD: '9999' },
@@ -247,6 +255,8 @@ describe('wallet token presentation data', () => {
                 spamReasons: ['moralis-clean'],
                 securityStatus: 'low',
                 visibility: 'unverified',
+                classificationTier: 'hidden',
+                classificationReasons: ['unlisted-token'],
             }],
         )
 
@@ -340,6 +350,8 @@ describe('wallet token presentation data', () => {
                 securityStatus: 'low',
                 visibility: 'primary',
                 priceConfidence: 'unknown',
+                classificationTier: 'established',
+                classificationReasons: ['established-market-asset'],
             }],
             queriedChainIds: [56, 137],
             successfulChainIds: [56],

@@ -24,5 +24,15 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      // Keep collection anchored to the workspace sources so an extracted
+      // patch bundle or a build output directory can never join the run.
+      include: [
+        'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        'apps/api/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        'packages/**/*.{test,spec}.{js,jsx,ts,tsx}',
+      ],
+      exclude: ['**/node_modules/**', 'dist/**', 'tests/playwright/**'],
+    },
   }
 })

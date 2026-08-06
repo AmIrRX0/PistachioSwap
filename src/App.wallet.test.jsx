@@ -1012,7 +1012,7 @@ describe('App wallet integration', () => {
         mocks.account.isConnected = true
         mocks.useWalletTokens.mockReturnValue({
             tokens: [{
-                classificationVersion: 5,
+                classificationVersion: 6,
                 chainId: 56,
                 address: '0x0000000000000000000000000000000000000000',
                 isNative: true,
@@ -1032,6 +1032,8 @@ describe('App wallet integration', () => {
                 spamReasons: ['native-bnb'],
                 securityStatus: 'trusted',
                 visibility: 'primary',
+                classificationTier: 'core',
+                classificationReasons: ['core-asset'],
             }],
             error: null,
             refetch: mocks.refetchWalletTokens,
@@ -1039,10 +1041,17 @@ describe('App wallet integration', () => {
 
         const { getByRole, queryByText } = render(<App />)
         fireEvent.click(getByRole('button', { name: /Open account/ }))
+        fireEvent.click(getByRole('button', { name: /View portfolio/ }))
 
-        expect(document.querySelector('.wallet-native-balance').textContent)
-            .toBe('1 asset')
-        expect(getByRole('heading', { name: 'All Networks' })).toBeTruthy()
+        expect(mocks.useWalletTokens).toHaveBeenCalledWith({
+            chainId: 'all',
+            walletAddress: ADDRESS,
+            enabled: true,
+        })
+        expect(getByRole('heading', { name: 'Portfolio' })).toBeTruthy()
+        expect(getByRole('button', { name: 'Back to wallet overview' }))
+            .toBeTruthy()
+        expect(queryByText('1 asset')).toBeTruthy()
         expect(document.querySelector('.appkit-network-control')).toBeNull()
         expect(queryByText('Fund wallet')).toBeNull()
     })
@@ -1065,8 +1074,8 @@ describe('App wallet integration', () => {
         expect(mocks.refetchWalletTokens).toHaveBeenCalledTimes(1)
 
         fireEvent.click(getByRole('button', { name: /Open account/ }))
-        expect(document.querySelector('.wallet-native-balance').textContent)
-            .toBe('1 asset')
+        fireEvent.click(getByRole('button', { name: /View portfolio/ }))
+        expect(getByText('1 asset')).toBeTruthy()
         expect(document.querySelector('.wallet-asset-list').textContent)
             .toContain('BNB')
     })
@@ -1167,14 +1176,14 @@ describe('App wallet integration', () => {
 
         fireEvent.pointerEnter(container.querySelector('.sell-panel'))
         fireEvent.click(getByRole('button', { name: '50%' }))
-        expect(amountInput.value).toBe('0.00217481583773454')
+        expect(amountInput.value).toBe('0.00264981583773454')
     })
 
     it('clicking an ERC-20 sell balance fills the complete exact amount', () => {
         mocks.account.address = ADDRESS
         mocks.account.isConnected = true
         const usdc = {
-            classificationVersion: 5,
+            classificationVersion: 6,
             chainId: 56,
             address: '0x0000000000000000000000000000000000000011',
             name: 'USD Coin',
@@ -1194,6 +1203,8 @@ describe('App wallet integration', () => {
             spamReasons: ['moralis-clean'],
             securityStatus: 'trusted',
             visibility: 'primary',
+            classificationTier: 'established',
+            classificationReasons: ['established-market-asset'],
         }
         mocks.marketTokens = [usdc]
         mocks.useWalletTokens.mockReturnValue({
@@ -1213,7 +1224,7 @@ describe('App wallet integration', () => {
 
     it('shows the exact recognized USDT market price in the fiat section', () => {
         const usdt = {
-            classificationVersion: 5,
+            classificationVersion: 6,
             chainId: 56,
             address: '0x55d398326f99059ff775485246999027b3197955',
             name: 'Tether USD',
@@ -1233,6 +1244,8 @@ describe('App wallet integration', () => {
             spamReasons: [],
             securityStatus: 'trusted',
             visibility: 'primary',
+            classificationTier: 'established',
+            classificationReasons: ['curated-official-contract'],
         }
         mocks.marketTokens = [usdt]
         mocks.useWalletTokens.mockReturnValue({

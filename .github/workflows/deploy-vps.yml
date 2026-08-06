@@ -93,27 +93,8 @@ jobs:
       - name: API typecheck
         run: pnpm --filter @pistachio/api typecheck
 
-      - name: Frontend deployment tests
-        run: >
-          pnpm exec vitest run src
-          --exclude src/App.wallet.test.jsx
-          --exclude src/features/gas-assist/components/GasAssistApprovalDialog.test.jsx
-          --exclude src/features/passkey/components/PistachioWalletController.test.jsx
-          --exclude src/features/tokens/components/TokenSelector.test.jsx
-          --exclude src/features/tokens/services/walletTokens.test.js
-          --exclude src/hooks/useCrossChainRoutes.test.js
-          --exclude src/services/swapSettings.test.js
-          --exclude src/web3/useWalletState.test.js
-
-      - name: API deployment tests
-        run: >
-          pnpm --filter @pistachio/api exec vitest run
-          test/gas-assist-proxy.test.ts
-          test/quotes.test.ts
-          test/unchained-wallet-tokens.test.ts
-          test/wallet-token-route.test.ts
-          test/token-discovery-registry.test.ts
-          test/cross-chain.test.ts
+      - name: Deployment tests
+        run: pnpm test
 
       - name: Frontend build
         env:

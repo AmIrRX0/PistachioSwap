@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: deploy-vps
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ env:
 jobs:
   build-test-deploy:
     name: Build, test, and deploy to VPS
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
 
     steps:

@@ -36,6 +36,7 @@ describe('swap execution mode', () => {
         expect(deriveRoutingMode({ sellChainId: 56, buyChainId: 8453, gasAssistPreferred: true }))
             .toBe(CROSS_CHAIN)
     })
+
     it.each(['idle', 'loading'])('issues no quote while native balance is %s', (nativeBalanceStatus) => {
         expect(deriveSwapExecution({ ...base, nativeBalanceStatus }).mode).toBeNull()
     })
@@ -53,20 +54,31 @@ describe('swap execution mode', () => {
         expect(deriveSwapExecution({ ...base, nativeBalance: 100n })).toEqual({ mode: 'normal', reason: null })
     })
 
-    it('does not enter prepaid Gas Assist on the wrong chain, native sell, or disabled config', () => {
+    it('does not enter prepaid Gas Assist on the wrong chain or for a native sell token', () => {
         expect(deriveSwapExecution({ ...base, chainId: 1 })).toMatchObject({ mode: null, reason: 'wrong-chain' })
         expect(deriveSwapExecution({ ...base, sellToken: { ...sellToken, isNative: true } })).toMatchObject({ mode: null, reason: 'native-sell-token' })
-        expect(deriveSwapExecution({ ...base, gasAssistConfig: { enabled: false } })).toMatchObject({ mode: null, reason: 'gas-assist-disabled' })
     })
 
-    it('distinguishes config loading, errors, and disabled responses', () => {
-        expect(deriveSwapExecution({ ...base, gasAssistConfigStatus: 'loading', gasAssistConfig: null }).reason)
-            .toBe('gas-assist-config-loading')
-        expect(deriveSwapExecution({ ...base, gasAssistConfigStatus: 'error', gasAssistConfig: null }).reason)
-            .toBe('gas-assist-config-error')
-        expect(getSwapExecutionMessage('gas-assist-config-loading')).toBe('Checking Gas Assist availability…')
-        expect(getSwapExecutionMessage('gas-assist-config-error')).toBe('Gas Assist configuration could not be loaded.')
-        expect(getSwapExecutionMessage('gas-assist-disabled')).toBe('Gas Assist is currently disabled.')
+    it('keeps low-BNB swaps in the assisted lane while sponsorship config loads, errors, or is disabled', () => {
+        expect(deriveSwapExecution({ ...base, gasAssistConfigStatus: 'loading', gasAssistConfig: null })).toEqual({
+            mode: PREPAID_SPONSORSHIP_MODE,
+            reason: 'gas-assist-config-loading',
+        })
+        expect(deriveSwapExecution({ ...base, gasAssistConfigStatus: 'error', gasAssistConfig: null })).toEqual({
+            mode: PREPAID_SPONSORSHIP_MODE,
+            reason: 'gas-assist-config-error',
+        })
+        expect(deriveSwapExecution({ ...base, gasAssistConfig: { enabled: false } })).toEqual({
+            mode: PREPAID_SPONSORSHIP_MODE,
+            reason: 'gas-assist-disabled',
+        })
+
+        expect(getSwapExecutionMessage('gas-assist-config-loading'))
+            .toBe('Not enough BNB for normal gas. Checking Gas Assist availability…')
+        expect(getSwapExecutionMessage('gas-assist-config-error'))
+            .toBe('Not enough BNB for normal gas. Gas Assist availability could not be checked.')
+        expect(getSwapExecutionMessage('gas-assist-disabled'))
+            .toBe('Not enough BNB for normal gas. Gas Assist is currently unavailable.')
     })
 
     it('accepts XAUT-like metadata without symbol or frontend allowlist checks', () => {

@@ -21,9 +21,9 @@ export function getSwapExecutionMessage(reason) {
     return {
         'native-balance-loading': 'Checking native BNB balance…',
         'native-balance-error': 'Native BNB balance could not be loaded.',
-        'gas-assist-config-loading': 'Checking Gas Assist availability…',
-        'gas-assist-config-error': 'Gas Assist configuration could not be loaded.',
-        'gas-assist-disabled': 'Gas Assist is currently disabled.',
+        'gas-assist-config-loading': 'Not enough BNB for normal gas. Checking Gas Assist availability…',
+        'gas-assist-config-error': 'Not enough BNB for normal gas. Gas Assist availability could not be checked.',
+        'gas-assist-disabled': 'Not enough BNB for normal gas. Gas Assist is currently unavailable.',
         'insufficient-native-balance': 'Gas Assist will be used because the wallet does not have enough BNB for normal gas.',
         'native-sell-token': 'Gas Assist cannot sell the native gas token.',
     }[reason] ?? null
@@ -76,12 +76,19 @@ export function deriveSwapExecution({
     }
     if (nativeBalance >= requiredNativeBalance) return { mode: NORMAL_SWAP_MODE, reason: null }
     if (sellToken.isNative) return { mode: null, reason: 'native-sell-token' }
+
+    // Once a same-chain BSC wallet is below the normal gas reserve, never fall
+    // back into an ordinary approval/swap. A disabled or temporarily unavailable
+    // sponsorship service must fail closed in the assisted lane; otherwise the
+    // wallet tries to estimate/send a transaction it cannot pay gas for.
     if (gasAssistConfigStatus === 'idle' || gasAssistConfigStatus === 'loading') {
-        return { mode: null, reason: 'gas-assist-config-loading' }
+        return { mode: PREPAID_SPONSORSHIP_MODE, reason: 'gas-assist-config-loading' }
     }
-    if (gasAssistConfigStatus === 'error') return { mode: null, reason: 'gas-assist-config-error' }
+    if (gasAssistConfigStatus === 'error') {
+        return { mode: PREPAID_SPONSORSHIP_MODE, reason: 'gas-assist-config-error' }
+    }
     if (gasAssistConfig?.enabled !== true) {
-        return { mode: null, reason: 'gas-assist-disabled' }
+        return { mode: PREPAID_SPONSORSHIP_MODE, reason: 'gas-assist-disabled' }
     }
     return { mode: PREPAID_SPONSORSHIP_MODE, reason: 'insufficient-native-balance' }
 }

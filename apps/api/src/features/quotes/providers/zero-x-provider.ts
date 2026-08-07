@@ -72,6 +72,15 @@ export function createZeroXProvider({
                 isNative: request.buyToken === '0x0000000000000000000000000000000000000000',
             })
 
+            const feeEnabled =
+                applyPlatformFee &&
+                config.fees.platformFeeBps > 0 &&
+                config.fees.collectionMode === 'provider-affiliate' &&
+                Boolean(config.fees.treasuryAddress)
+            const expectedFeeToken = feeEnabled
+                ? normalizeAddress(sellToken.zeroX)
+                : null
+
             const url = new URL(
                 `${config.quotes.zeroX.baseUrl}/swap/allowance-holder/quote`,
             )
@@ -85,21 +94,16 @@ export function createZeroXProvider({
                 String(request.slippageBps),
             )
 
-            if (
-                applyPlatformFee &&
-                config.fees.platformFeeBps > 0 &&
-                config.fees.collectionMode === 'provider-affiliate' &&
-                config.fees.treasuryAddress
-            ) {
+            if (feeEnabled) {
                 url.searchParams.set(
                     'swapFeeRecipient',
-                    config.fees.treasuryAddress,
+                    config.fees.treasuryAddress!,
                 )
                 url.searchParams.set(
                     'swapFeeBps',
                     String(config.fees.platformFeeBps),
                 )
-                url.searchParams.set('swapFeeToken', buyToken.zeroX)
+                url.searchParams.set('swapFeeToken', sellToken.zeroX)
             }
 
             const payload = await fetchJson(url, {
@@ -164,6 +168,20 @@ export function createZeroXProvider({
                     outcome: 'validation',
                 })
             }
+            if (
+                feeEnabled &&
+                (
+                    feeAmount === '0' ||
+                    !expectedFeeToken ||
+                    feeToken !== expectedFeeToken
+                )
+            ) {
+                throw new ProviderError({
+                    code: 'ZEROX_INTEGRATOR_FEE_MISMATCH',
+                    message: '0x did not return the required PistachioSwap fee in the input token.',
+                    outcome: 'validation',
+                })
+            }
 
             let estimatedGasUsd: string | null = null
             const totalNetworkFee = decimalInteger(payload.totalNetworkFee)
@@ -181,7 +199,7 @@ export function createZeroXProvider({
             return {
                 provider: '0x',
                 billingMode:
-                    applyPlatformFee && config.fees.platformFeeBps > 0
+                    feeEnabled
                         ? 'provider-integrator'
                         : 'normal-provider-fee',
                 quoteId: quoteId(payload.zid ?? payload.blockNumber, '0x'),
@@ -202,12 +220,7 @@ export function createZeroXProvider({
                 platformFee: {
                     amount: feeAmount,
                     token: feeToken,
-                    bps:
-                        feeAmount === '0'
-                            ? 0
-                            : applyPlatformFee
-                                ? config.fees.platformFeeBps
-                                : 0,
+                    bps: feeEnabled ? config.fees.platformFeeBps : 0,
                 },
                 route:
                     isRecord(payload.route) && Array.isArray(payload.route.fills)

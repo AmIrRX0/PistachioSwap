@@ -33,7 +33,7 @@ describe.sequential('KyberSwap Aggregator provider', () => {
         process.env.KYBERSWAP_CLIENT_ID = 'PistachioSwap-test'
         process.env.PLATFORM_FEE_BPS = '67'
         process.env.FEE_COLLECTION_MODE = 'provider-affiliate'
-        process.env.FEE_TOKEN_MODE = 'buyToken'
+        process.env.FEE_TOKEN_MODE = 'sellToken'
         process.env.TREASURY_ADDRESS = treasury
     })
 
@@ -42,7 +42,7 @@ describe.sequential('KyberSwap Aggregator provider', () => {
         vi.unstubAllGlobals()
     })
 
-    it('requests a fee-aware route and builds calldata against the official router', async () => {
+    it('requests a sell-token fee route and builds calldata against the official router', async () => {
         const routeSummary = {
             tokenIn: usdt,
             tokenOut: xaut,
@@ -53,7 +53,7 @@ describe.sequential('KyberSwap Aggregator provider', () => {
             gasUsd: '0.012',
             extraFee: {
                 feeAmount: '67',
-                chargeFeeBy: 'currency_out',
+                chargeFeeBy: 'currency_in',
                 isInBps: true,
                 feeReceiver: treasury,
             },
@@ -67,7 +67,7 @@ describe.sequential('KyberSwap Aggregator provider', () => {
                 expect(url.searchParams.get('tokenIn')).toBe(usdt)
                 expect(url.searchParams.get('tokenOut')).toBe(xaut)
                 expect(url.searchParams.get('feeAmount')).toBe('67')
-                expect(url.searchParams.get('chargeFeeBy')).toBe('currency_out')
+                expect(url.searchParams.get('chargeFeeBy')).toBe('currency_in')
                 expect(url.searchParams.get('feeReceiver')).toBe(treasury)
                 expect(options.headers).toMatchObject({
                     'x-client-id': 'PistachioSwap-test',
@@ -116,7 +116,7 @@ describe.sequential('KyberSwap Aggregator provider', () => {
             allowanceTarget: KYBERSWAP_ROUTER_ADDRESS,
             platformFee: {
                 bps: 67,
-                token: xaut,
+                token: usdt,
             },
             transaction: {
                 to: KYBERSWAP_ROUTER_ADDRESS,

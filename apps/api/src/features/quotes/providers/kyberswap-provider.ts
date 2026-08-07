@@ -71,7 +71,7 @@ function validateExtraFee(
     const feeRecipient = normalizeAddress(extraFee?.feeReceiver)
     const feeAmount = Number(extraFee?.feeAmount)
     const valid =
-        extraFee?.chargeFeeBy === 'currency_out' &&
+        extraFee?.chargeFeeBy === 'currency_in' &&
         extraFee?.isInBps === true &&
         Number.isInteger(feeAmount) &&
         feeAmount === expectedBps &&
@@ -152,7 +152,7 @@ export function createKyberSwapProvider({
             routeUrl.searchParams.set('origin', request.takerAddress)
 
             if (feeBps > 0 && feeRecipient) {
-                routeUrl.searchParams.set('chargeFeeBy', 'currency_out')
+                routeUrl.searchParams.set('chargeFeeBy', 'currency_in')
                 routeUrl.searchParams.set('feeReceiver', feeRecipient)
                 routeUrl.searchParams.set('isInBps', 'true')
                 routeUrl.searchParams.set('feeAmount', String(feeBps))
@@ -272,7 +272,7 @@ export function createKyberSwapProvider({
                 transaction,
                 platformFee: {
                     amount: '0',
-                    token: feeBps > 0 ? request.buyToken : null,
+                    token: feeBps > 0 ? request.sellToken : null,
                     bps: feeBps,
                     configuredBps: feeBps,
                     effectiveBps: feeBps,

@@ -4,7 +4,6 @@ import { getValidatedExecutableTransaction } from './executableTransaction.js'
 
 const sameAddress = (left, right) => String(left ?? '').toLowerCase() === String(right ?? '').toLowerCase()
 
-/** Typed safe error for a refreshed response that changed reviewed intent. */
 export class RefreshedQuoteValidationError extends Error {
     constructor(message) {
         super(message)
@@ -13,15 +12,8 @@ export class RefreshedQuoteValidationError extends Error {
 }
 
 /**
- * Purpose: proves a force-refreshed quote still represents the confirmed swap.
- * Inputs: refreshed and previous quote responses, captured request snapshot,
- * connected account/chain/token identities, and Permit2/schema requirements.
- * Output: the same refreshed quote after complete validation.
- * Side effects: none.
- * Errors: throws `RefreshedQuoteValidationError` for stale account, chain,
- * tokens, amount, provider, schema, approval binding, target, or expiry.
- * Security: never adapts changed intent; canonical approval metadata and the
- * executable transaction remain bound to the captured review request.
+ * Proves a force-refreshed quote still represents the confirmed swap and keeps
+ * any backend-normalized approval authority bound to the reviewed route.
  */
 export function validateRefreshedQuote({
     refreshedQuote,
@@ -31,7 +23,6 @@ export function validateRefreshedQuote({
     chainId,
     sellToken,
     buyToken,
-    requirePancakePermit2 = false,
     mismatchMessage = 'The refreshed quote no longer matches the approved swap.',
 }) {
     const fail = (message = mismatchMessage) => { throw new RefreshedQuoteValidationError(message) }
@@ -48,16 +39,34 @@ export function validateRefreshedQuote({
     if (Number(snapshot.slippageBps) !== Number(request.slippageBps)) fail()
     if (String(selected.provider ?? '').trim().toLowerCase() !== String(previous?.provider ?? '').trim().toLowerCase()) fail()
 
-    const pancake = requirePancakePermit2 || String(selected.provider ?? '').trim().toLowerCase() === 'pancakeswap'
-    if (pancake) {
-        const approval = selected.approval
-        const oldApproval = previous?.approval
+    const approval = selected.approval
+    const oldApproval = previous?.approval
+    if (approval || oldApproval) {
         const requiredIntentAmount = request.mode === 'EXACT_INPUT' ? request.sellAmount : selected.maximumSellAmount
-        const validRequiredAmount = /^[1-9]\d*$/.test(String(approval?.requiredAmount ?? '')) && /^[1-9]\d*$/.test(String(requiredIntentAmount ?? '')) && BigInt(approval.requiredAmount) >= BigInt(requiredIntentAmount)
-        if (refreshedQuote.approvalSchemaVersion !== 1 || approval?.mode !== 'permit2-allowance' || !isAddress(approval.contract ?? '') || !isAddress(approval.spender ?? '') || !isAddress(approval.token ?? '') || !validRequiredAmount || !sameAddress(approval.contract, selected.allowanceTarget) || !sameAddress(approval.spender, selected.transaction?.to) || !sameAddress(approval.token, selected.sellToken) || !sameAddress(approval.contract, oldApproval?.contract) || !sameAddress(approval.spender, oldApproval?.spender) || !sameAddress(approval.token, oldApproval?.token)) {
-            fail('The refreshed PancakeSwap quote changed its Permit2 authorization.')
+        const validRequiredAmount = /^[1-9]\d*$/.test(String(approval?.requiredAmount ?? '')) &&
+            /^[1-9]\d*$/.test(String(requiredIntentAmount ?? '')) &&
+            BigInt(approval.requiredAmount) >= BigInt(requiredIntentAmount)
+        if (
+            refreshedQuote.approvalSchemaVersion !== 1 ||
+            !['erc20', 'permit2-allowance'].includes(approval?.mode) ||
+            !isAddress(approval?.contract ?? '') ||
+            !isAddress(approval?.spender ?? '') ||
+            !isAddress(approval?.token ?? '') ||
+            !validRequiredAmount ||
+            !sameAddress(approval.token, selected.sellToken) ||
+            !sameAddress(approval.contract, oldApproval?.contract) ||
+            !sameAddress(approval.spender, oldApproval?.spender) ||
+            !sameAddress(approval.token, oldApproval?.token)
+        ) {
+            fail('The refreshed quote changed its token authorization.')
         }
     }
-    getValidatedExecutableTransaction({ quoteResponse: refreshedQuote, expectedChainId: chainId, expectedSellToken: sellToken, expectedBuyToken: buyToken, expectedAccount: account })
+    getValidatedExecutableTransaction({
+        quoteResponse: refreshedQuote,
+        expectedChainId: chainId,
+        expectedSellToken: sellToken,
+        expectedBuyToken: buyToken,
+        expectedAccount: account,
+    })
     return refreshedQuote
 }

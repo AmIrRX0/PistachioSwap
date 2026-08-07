@@ -1,5 +1,3 @@
-import { isAddress } from 'viem'
-
 import { getExecutableTransaction, isQuoteExpired } from '../../../services/swapTransaction.js'
 
 /**
@@ -8,8 +6,7 @@ import { getExecutableTransaction, isQuoteExpired } from '../../../services/swap
  * identity, quote state, balance result, and expected execution chain.
  * Output: `{ canReview, blockingReason, blockingMessage, visibleMessage, actionType }`.
  * Side effects: none. Errors: malformed executable quote data becomes a blocked result.
- * Security: verifies canonical Pancake Permit2 metadata and transaction binding
- * before the UI permits a wallet operation.
+ * Security: accepts only backend-normalized approval modes before wallet execution.
  */
 export function deriveSameChainReviewEligibility({
     activeAmountIn, activeBuyAmountIn, activeAmountSide, activeQuote,
@@ -36,13 +33,8 @@ export function deriveSameChainReviewEligibility({
     if (activeAmountSide === 'buy' && quote.selectedQuote.buyAmount && activeBuyAmountIn && String(quote.selectedQuote.buyAmount) !== String(activeBuyAmountIn)) return blocked('stale-quote', 'Quote no longer matches the selected amount.')
     if (insufficientFunds) return blocked('insufficient-balance', `Not enough ${sellToken?.symbol ?? 'funds'} for this swap.`)
     const selected = quote.selectedQuote
-    const provider = String(selected.provider ?? '').trim().toLowerCase()
-    if (provider !== 'pancakeswap' && selected.approval && !['permit2-allowance', 'erc20'].includes(selected.approval.mode)) return blocked('unsupported-approval-mode', 'This quote uses an unsupported approval mode.')
-    if (provider === 'pancakeswap' && !sellToken?.isNative) {
-        const approval = selected.approval
-        const requiredAmount = selected.mode === 'EXACT_OUTPUT' ? selected.maximumSellAmount : selected.sellAmount
-        const validAmount = /^[1-9]\d*$/.test(String(approval?.requiredAmount ?? '')) && /^[1-9]\d*$/.test(String(requiredAmount ?? '')) && BigInt(approval.requiredAmount) >= BigInt(requiredAmount)
-        if (approval?.mode !== 'permit2-allowance' || !isAddress(approval.contract ?? '') || !isAddress(approval.spender ?? '') || !isAddress(approval.token ?? '') || String(approval.contract).toLowerCase() !== String(selected.allowanceTarget ?? '').toLowerCase() || String(approval.spender).toLowerCase() !== String(selected.transaction?.to ?? '').toLowerCase() || String(approval.token).toLowerCase() !== String(selected.sellToken ?? '').toLowerCase() || !validAmount) return blocked('missing-permit2-approval-metadata', 'PancakeSwap approval information is incomplete. Refresh the quote.')
+    if (selected.approval && !['permit2-allowance', 'erc20'].includes(selected.approval.mode)) {
+        return blocked('unsupported-approval-mode', 'This quote uses an unsupported approval mode.')
     }
     try {
         getExecutableTransaction(quote, { chainId: swapChainId, sellToken: sellToken.address, buyToken: buyToken.address })

@@ -1,4 +1,4 @@
-export type QuoteProviderName = 'uniswap' | '0x' | 'pancakeswap' | 'kyberswap'
+export type QuoteProviderName = 'uniswap' | '0x' | 'kyberswap'
 
 export type QuoteRequest = {
     chainId: number

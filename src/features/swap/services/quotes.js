@@ -1,4 +1,4 @@
-import { getAddress, isAddress, zeroAddress } from 'viem'
+import { getAddress, isAddress } from 'viem'
 import { isCuratedEvmChainId } from '../../../web3/curatedEvmChains.js'
 
 /**
@@ -88,10 +88,6 @@ const quoteCache = new Map()
 const MAX_QUOTE_CACHE_ENTRIES = 100
 export const APPROVAL_SCHEMA_VERSION = 1
 
-function sameAddress(left, right) {
-    return String(left ?? '').toLowerCase() === String(right ?? '').toLowerCase()
-}
-
 function approvalMetadataDiagnostic(value) {
     const selected = value?.selectedQuote
     const approval = selected?.approval
@@ -118,60 +114,23 @@ function logApprovalMetadata(event, value, level = 'debug') {
 }
 
 /**
- * Purpose: validates and normalizes an API quote response and its approval metadata.
- * Inputs: parsed JSON from the quote API.
- * Output: response with checksummed addresses and canonical approval fields.
- * Side effects: emits existing approval diagnostic events.
- * Errors: throws for malformed/legacy approval metadata or quote shape.
- * Security: rejects unbound Permit2 and ERC-20 authorization instructions.
+ * Purpose: validates the stable same-chain API response envelope.
+ * Provider-specific approval normalization is owned by the backend, so the
+ * browser never reconstructs or guesses approval authorities.
  */
 export function normalizeQuoteResponse(value) {
     const selected = value?.selectedQuote
     if (!selected || typeof selected !== 'object') {
         throw new QuoteRequestError('Quote response did not contain an executable route.')
     }
-
-    const provider = String(selected.provider ?? '').trim().toLowerCase()
-    const pancakeErc20 = provider === 'pancakeswap' &&
-        !sameAddress(selected.sellToken, zeroAddress)
-    if (!pancakeErc20) return value
-
-    const approval = selected.approval
-    const requiredAmount = String(approval?.requiredAmount ?? '')
-    const canonical =
-        value.approvalSchemaVersion === APPROVAL_SCHEMA_VERSION &&
-        approval?.mode === 'permit2-allowance' &&
-        isAddress(approval.contract ?? '') &&
-        isAddress(approval.spender ?? '') &&
-        isAddress(approval.token ?? '') &&
-        /^[1-9]\d*$/.test(requiredAmount) &&
-        sameAddress(approval.contract, selected.allowanceTarget) &&
-        sameAddress(approval.spender, selected.transaction?.to) &&
-        sameAddress(approval.token, selected.sellToken)
-    if (!canonical) {
-        logApprovalMetadata('approval.metadata.frontend-normalized', value, 'error')
+    if (value.approvalSchemaVersion !== APPROVAL_SCHEMA_VERSION) {
         logApprovalMetadata('approval.metadata.invalid-before-review', value, 'error')
         throw new QuoteRequestError(
-            'PancakeSwap approval information is incomplete. Refresh the quote.',
-            { code: 'PANCAKESWAP_APPROVAL_METADATA_INCOMPLETE' },
+            'Quote approval information is incompatible. Refresh the quote.',
+            { code: 'APPROVAL_SCHEMA_VERSION_UNSUPPORTED' },
         )
     }
-
-    return {
-        ...value,
-        approvalSchemaVersion: APPROVAL_SCHEMA_VERSION,
-        selectedQuote: {
-            ...selected,
-            provider,
-            approval: {
-                mode: 'permit2-allowance',
-                contract: getAddress(approval.contract),
-                spender: getAddress(approval.spender),
-                token: getAddress(approval.token),
-                requiredAmount,
-            },
-        },
-    }
+    return value
 }
 
 function pruneQuoteCache(now = Date.now(), enforceCapacity = false) {
@@ -189,7 +148,7 @@ function pruneQuoteCache(now = Date.now(), enforceCapacity = false) {
  * Output: promise resolving to the normalized quote response.
  * Side effects: performs browser HTTP, writes/prunes cache, and emits diagnostics.
  * Errors: rejects API failures as `QuoteRequestError` and rejects invalid payloads.
- * Security: preserves request identity and validates canonical approval metadata.
+ * Security: preserves request identity and trusts only backend-normalized approval metadata.
  */
 export async function fetchSwapQuote({
     endpoint,

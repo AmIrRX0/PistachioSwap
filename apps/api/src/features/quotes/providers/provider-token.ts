@@ -19,9 +19,6 @@ export type ProviderTokenIdentity = {
     zeroX: string
     uniswap: string
     kyberSwap: string
-    pancake:
-        | { kind: 'native' }
-        | { kind: 'erc20'; address: string }
 }
 
 export function normalizeProviderToken({
@@ -56,8 +53,5 @@ export function normalizeProviderToken({
         zeroX: isNative ? ZERO_X_NATIVE_TOKEN_ADDRESS : normalized,
         uniswap: normalized,
         kyberSwap: isNative ? KYBERSWAP_NATIVE_TOKEN_ADDRESS : normalized,
-        pancake: isNative
-            ? { kind: 'native' }
-            : { kind: 'erc20', address: normalized },
     }
 }

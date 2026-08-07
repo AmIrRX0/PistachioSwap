@@ -176,7 +176,6 @@ export function assertNormalizedQuote(quote: NormalizedQuote) {
     const approvalRequiredAmount = decimalInteger(
         rawApproval?.requiredAmount ?? rawApproval?.amount,
     )
-    const pancake = String(quote.provider).trim().toLowerCase() === 'pancakeswap'
     let canonicalApproval: NormalizedQuote['approval'] =
         approvalMode && approvalContract && approvalSpender &&
         approvalToken && approvalRequiredAmount && BigInt(approvalRequiredAmount) > 0n
@@ -191,7 +190,6 @@ export function assertNormalizedQuote(quote: NormalizedQuote) {
     const directAllowanceTarget = normalizeAddress(quote.allowanceTarget)
     if (
         !canonicalApproval &&
-        !pancake &&
         normalizeAddress(quote.sellToken) !== NATIVE_TOKEN_ADDRESS &&
         directAllowanceTarget
     ) {
@@ -202,23 +200,6 @@ export function assertNormalizedQuote(quote: NormalizedQuote) {
             token: normalizeAddress(quote.sellToken)!,
             requiredAmount: maximumSellAmount,
         }
-    }
-
-    if (
-        pancake &&
-        normalizeAddress(quote.sellToken) !== NATIVE_TOKEN_ADDRESS &&
-        (
-            canonicalApproval?.mode !== 'permit2-allowance' ||
-            canonicalApproval.contract !== normalizeAddress(quote.allowanceTarget) ||
-            canonicalApproval.spender !== transaction.to ||
-            canonicalApproval.token !== normalizeAddress(quote.sellToken)
-        )
-    ) {
-        throw new ProviderError({
-            code: 'PANCAKESWAP_APPROVAL_METADATA_INVALID',
-            message: 'PancakeSwap returned incomplete Permit2 approval metadata.',
-            outcome: 'validation',
-        })
     }
 
     return {

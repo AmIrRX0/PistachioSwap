@@ -8,7 +8,6 @@ import {
     getNativeTokenPrice,
     getTokenPrices,
 } from '../../../providers/alchemy/token-prices.js'
-import { createPancakeSwapProvider } from '../providers/pancakeswap-provider.js'
 import { createKyberSwapProvider } from '../providers/kyberswap-provider.js'
 import { assertNormalizedQuote } from '../schemas/quote-utils.js'
 import type {
@@ -20,8 +19,6 @@ import type {
 } from '../types/types.js'
 import { createUniswapProvider } from '../providers/uniswap-provider.js'
 import { createZeroXProvider } from '../providers/zero-x-provider.js'
-
-const INPUT_FEE_PROVIDER_NAMES = new Set(['kyberswap', '0x'])
 
 function withTimeout(
     provider: QuoteProvider,
@@ -268,19 +265,12 @@ export function createQuoteSelector(
             createUniswapProvider(),
             createKyberSwapProvider(),
             createZeroXProvider(),
-            createPancakeSwapProvider(),
         ]
     const enabledProviderNames = new Set(config.quotes.providers)
-    const inputFeeRequired =
-        config.fees.platformFeeBps > 0 &&
-        config.fees.collectionMode === 'provider-affiliate'
     const considered = providers.filter((provider) => {
         const kyberEnabled = provider.name === 'kyberswap' &&
             process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
         if (!kyberEnabled && !enabledProviderNames.has(provider.name)) return false
-        if (inputFeeRequired && !INPUT_FEE_PROVIDER_NAMES.has(provider.name)) {
-            return false
-        }
         return (
             config.quotes.mode === 'best' ||
             provider.name === config.quotes.mode
@@ -290,10 +280,7 @@ export function createQuoteSelector(
     function providerEnabled(provider: QuoteProvider) {
         if (provider.name === 'uniswap') return config.quotes.uniswap.enabled
         if (provider.name === '0x') return config.quotes.zeroX.enabled
-        if (provider.name === 'kyberswap') {
-            return process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
-        }
-        return config.quotes.pancakeSwap.enabled
+        return process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
     }
 
     return async function selectQuotes(

@@ -21,6 +21,8 @@ import type {
 import { createUniswapProvider } from '../providers/uniswap-provider.js'
 import { createZeroXProvider } from '../providers/zero-x-provider.js'
 
+const INPUT_FEE_PROVIDER_NAMES = new Set(['kyberswap', '0x'])
+
 function withTimeout(
     provider: QuoteProvider,
     request: QuoteRequest,
@@ -269,10 +271,16 @@ export function createQuoteSelector(
             createPancakeSwapProvider(),
         ]
     const enabledProviderNames = new Set(config.quotes.providers)
+    const inputFeeRequired =
+        config.fees.platformFeeBps > 0 &&
+        config.fees.collectionMode === 'provider-affiliate'
     const considered = providers.filter((provider) => {
         const kyberEnabled = provider.name === 'kyberswap' &&
             process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
         if (!kyberEnabled && !enabledProviderNames.has(provider.name)) return false
+        if (inputFeeRequired && !INPUT_FEE_PROVIDER_NAMES.has(provider.name)) {
+            return false
+        }
         return (
             config.quotes.mode === 'best' ||
             provider.name === config.quotes.mode

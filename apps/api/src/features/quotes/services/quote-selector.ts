@@ -1,9 +1,15 @@
 import { getApiConfig } from '../../../config.js'
+import { NATIVE_TOKEN_ADDRESS } from '../../../lib/address.js'
 import {
     ProviderError,
     type ProviderDiagnostic,
 } from '../../../lib/errors.js'
+import {
+    getNativeTokenPrice,
+    getTokenPrices,
+} from '../../../providers/alchemy/token-prices.js'
 import { createPancakeSwapProvider } from '../providers/pancakeswap-provider.js'
+import { createKyberSwapProvider } from '../providers/kyberswap-provider.js'
 import { assertNormalizedQuote } from '../schemas/quote-utils.js'
 import type {
     NormalizedQuote,
@@ -148,12 +154,105 @@ export function selectBestQuote(quotes: NormalizedQuote[]) {
         }
         const leftNet = BigInt(left.minimumBuyAmount ?? left.buyAmount)
         const rightNet = BigInt(right.minimumBuyAmount ?? right.buyAmount)
-
-        // Minimum buy amounts are the comparable guaranteed user outcome for
-        // the same exact input. Fee metadata remains informational because it
-        // may be denominated in either side of the trade.
         if (leftNet === rightNet) return 0
         return leftNet > rightNet ? -1 : 1
+    })[0]
+}
+
+function decimalToScaled(value: string, scale: number) {
+    const match = value.trim().match(/^(\d+)(?:\.(\d+))?$/)
+    if (!match) return null
+    const fraction = (match[2] ?? '').slice(0, scale).padEnd(scale, '0')
+    return BigInt(match[1]) * 10n ** BigInt(scale) + BigInt(fraction || '0')
+}
+
+function usdCostToTokenRaw({
+    costUsd,
+    tokenPriceUsd,
+    tokenDecimals,
+}: {
+    costUsd: string | null
+    tokenPriceUsd: string | null
+    tokenDecimals: number
+}) {
+    if (!costUsd || !tokenPriceUsd) return null
+    const scale = 12
+    const cost = decimalToScaled(costUsd, scale)
+    const price = decimalToScaled(tokenPriceUsd, scale)
+    if (cost === null || price === null || price <= 0n) return null
+    const tokenScale = 10n ** BigInt(tokenDecimals)
+    return (cost * tokenScale + price - 1n) / price
+}
+
+async function tokenUsdPrice(
+    request: QuoteRequest,
+    side: 'sell' | 'buy',
+    signal?: AbortSignal,
+) {
+    const token = side === 'sell' ? request.sellToken : request.buyToken
+    if (token === NATIVE_TOKEN_ADDRESS) {
+        return getNativeTokenPrice(request.chainId, signal)
+    }
+    const prices = await getTokenPrices({
+        chainId: request.chainId,
+        addresses: [token],
+        signal,
+    })
+    return prices.get(token.toLowerCase()) ?? prices.get(token) ?? null
+}
+
+export async function selectBestQuoteByTotalCost(
+    quotes: NormalizedQuote[],
+    request: QuoteRequest,
+    signal?: AbortSignal,
+) {
+    if (quotes.length === 0) return selectBestQuote(quotes)
+
+    const side = request.mode === 'EXACT_OUTPUT' ? 'sell' : 'buy'
+    const decimals = side === 'sell'
+        ? request.sellTokenDecimals
+        : request.buyTokenDecimals
+    let priceUsd: string | null = null
+    try {
+        priceUsd = await tokenUsdPrice(request, side, signal)
+    } catch {
+        priceUsd = null
+    }
+
+    return [...quotes].sort((left, right) => {
+        const leftGas = usdCostToTokenRaw({
+            costUsd: left.estimatedGasUsd,
+            tokenPriceUsd: priceUsd,
+            tokenDecimals: decimals,
+        })
+        const rightGas = usdCostToTokenRaw({
+            costUsd: right.estimatedGasUsd,
+            tokenPriceUsd: priceUsd,
+            tokenDecimals: decimals,
+        })
+
+        if (request.mode === 'EXACT_OUTPUT') {
+            const leftSell = BigInt(left.maximumSellAmount) + (leftGas ?? 0n)
+            const rightSell = BigInt(right.maximumSellAmount) + (rightGas ?? 0n)
+            if (leftSell !== rightSell) return leftSell < rightSell ? -1 : 1
+        } else {
+            const leftOutput = BigInt(left.minimumBuyAmount)
+            const rightOutput = BigInt(right.minimumBuyAmount)
+            const leftEffective = leftGas === null || leftGas >= leftOutput
+                ? leftOutput
+                : leftOutput - leftGas
+            const rightEffective = rightGas === null || rightGas >= rightOutput
+                ? rightOutput
+                : rightOutput - rightGas
+            if (leftEffective !== rightEffective) {
+                return leftEffective > rightEffective ? -1 : 1
+            }
+        }
+
+        const leftKnownGas = left.estimatedGasUsd !== null
+        const rightKnownGas = right.estimatedGasUsd !== null
+        if (leftKnownGas !== rightKnownGas) return leftKnownGas ? -1 : 1
+        return selectBestQuote([left, right]) === left ? -1 : 1
     })[0]
 }
 
@@ -165,12 +264,15 @@ export function createQuoteSelector(
         providedProviders ??
         [
             createUniswapProvider(),
+            createKyberSwapProvider(),
             createZeroXProvider(),
             createPancakeSwapProvider(),
         ]
     const enabledProviderNames = new Set(config.quotes.providers)
     const considered = providers.filter((provider) => {
-        if (!enabledProviderNames.has(provider.name)) return false
+        const kyberEnabled = provider.name === 'kyberswap' &&
+            process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
+        if (!kyberEnabled && !enabledProviderNames.has(provider.name)) return false
         return (
             config.quotes.mode === 'best' ||
             provider.name === config.quotes.mode
@@ -180,6 +282,9 @@ export function createQuoteSelector(
     function providerEnabled(provider: QuoteProvider) {
         if (provider.name === 'uniswap') return config.quotes.uniswap.enabled
         if (provider.name === '0x') return config.quotes.zeroX.enabled
+        if (provider.name === 'kyberswap') {
+            return process.env.KYBERSWAP_ENABLED?.trim().toLowerCase() !== 'false'
+        }
         return config.quotes.pancakeSwap.enabled
     }
 
@@ -329,7 +434,7 @@ export function createQuoteSelector(
 
         return {
             approvalSchemaVersion: 1,
-            selectedQuote: selectBestQuote(quotes),
+            selectedQuote: await selectBestQuoteByTotalCost(quotes, request, signal),
             providers: allSummaries,
         }
     }

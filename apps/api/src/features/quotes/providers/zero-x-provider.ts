@@ -3,6 +3,7 @@ import { isCuratedEvmChainId } from '../../../chains.js'
 import { normalizeAddress } from '../../../lib/address.js'
 import { ProviderError } from '../../../lib/errors.js'
 import { fetchJson, isRecord } from '../../../lib/http.js'
+import { getNativeTokenPrice } from '../../../providers/alchemy/token-prices.js'
 import {
     decimalInteger,
     futureExpiry,
@@ -22,6 +23,18 @@ export const ZERO_X_ALLOWANCE_HOLDER_BY_CHAIN = new Map<number, string>([
     ] as const),
     [5000, '0x0000000000005e88410ccdfade4a5efae4b49562'],
 ])
+
+function networkFeeUsd(totalNetworkFee: unknown, nativeUsdPrice: string | null) {
+    const feeWei = decimalInteger(totalNetworkFee)
+    if (!feeWei || !nativeUsdPrice || !/^\d+(?:\.\d+)?$/.test(nativeUsdPrice)) {
+        return null
+    }
+    const feeNative = Number(feeWei) / 1e18
+    const price = Number(nativeUsdPrice)
+    const usd = feeNative * price
+    if (!Number.isFinite(usd) || usd < 0) return null
+    return usd.toFixed(8).replace(/0+$/, '').replace(/\.$/, '') || '0'
+}
 
 export function createZeroXProvider({
     applyPlatformFee = true,
@@ -152,6 +165,19 @@ export function createZeroXProvider({
                 })
             }
 
+            let estimatedGasUsd: string | null = null
+            const totalNetworkFee = decimalInteger(payload.totalNetworkFee)
+            if (totalNetworkFee) {
+                try {
+                    estimatedGasUsd = networkFeeUsd(
+                        totalNetworkFee,
+                        await getNativeTokenPrice(request.chainId, signal),
+                    )
+                } catch {
+                    estimatedGasUsd = null
+                }
+            }
+
             return {
                 provider: '0x',
                 billingMode:
@@ -169,7 +195,7 @@ export function createZeroXProvider({
                 maximumSellAmount: request.sellAmount,
                 estimatedGas:
                     decimalInteger(payload.gas) ?? transaction.gas ?? null,
-                estimatedGasUsd: null,
+                estimatedGasUsd,
                 allowanceTarget:
                     sellToken.isNative ? null : expectedAllowanceTarget,
                 transaction,

@@ -170,12 +170,15 @@ export function createZeroXProvider({
             }
             if (
                 feeEnabled &&
-                feeAmount !== '0' &&
-                (!expectedFeeToken || feeToken !== expectedFeeToken)
+                (
+                    feeAmount === '0' ||
+                    !expectedFeeToken ||
+                    feeToken !== expectedFeeToken
+                )
             ) {
                 throw new ProviderError({
-                    code: 'ZEROX_INTEGRATOR_FEE_TOKEN_MISMATCH',
-                    message: '0x returned the PistachioSwap fee in the wrong token.',
+                    code: 'ZEROX_INTEGRATOR_FEE_MISMATCH',
+                    message: '0x did not return the required PistachioSwap fee in the input token.',
                     outcome: 'validation',
                 })
             }
@@ -217,12 +220,7 @@ export function createZeroXProvider({
                 platformFee: {
                     amount: feeAmount,
                     token: feeToken,
-                    bps:
-                        feeAmount === '0'
-                            ? 0
-                            : feeEnabled
-                                ? config.fees.platformFeeBps
-                                : 0,
+                    bps: feeEnabled ? config.fees.platformFeeBps : 0,
                 },
                 route:
                     isRecord(payload.route) && Array.isArray(payload.route.fills)

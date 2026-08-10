@@ -84,7 +84,7 @@ export default function PistachioWalletController() {
     const lockedPhase = ['locked', 'unlocking'].includes(snapshot.phase)
     const walletPageVisible = snapshot.phase === 'unlocked' || Boolean(
         snapshot.signingPasskeyOnly === true &&
-        snapshot.phase === 'locked' &&
+        ['locked', 'unlocking'].includes(snapshot.phase) &&
         snapshot.sessionActive &&
         snapshot.walletViewAuthorized === true &&
         snapshot.view === 'wallet',
@@ -173,7 +173,7 @@ export default function PistachioWalletController() {
                                 {snapshot.phase === 'initializing' && <LoadingState title="Checking for saved wallets">Reading encrypted wallet information from this browser.</LoadingState>}
                                 {snapshot.phase === 'storage-error' && <StorageErrorContent snapshot={snapshot} />}
                                 {setupPhase && <SetupContent entryScreen={entryScreen} initialImportMode={initialImportMode} onBackupRestored={resumeRestoredVault} onEntryScreenChange={setEntryScreen} onSensitiveChange={setSensitive} snapshot={snapshot} />}
-                                {lockedPhase && snapshot.phase === 'unlocking' && <LoadingState title="Confirming wallet action">Complete the passkey prompt in your browser.</LoadingState>}
+                                {lockedPhase && snapshot.phase === 'unlocking' && !walletPageVisible && <LoadingState title="Confirming wallet action">Complete the passkey prompt in your browser.</LoadingState>}
                                 {lockedPhase && snapshot.phase === 'locked' && !walletPageVisible && entryScreen === 'menu' && <SavedWalletEntry snapshot={snapshot} onAnother={() => setEntryScreen('another')} onChoose={() => setEntryScreen('chooser')} onRestore={() => setEntryScreen('restore')} onSensitiveChange={setSensitive} onStart={startAnotherWallet} />}
                                 {lockedPhase && snapshot.phase === 'locked' && !walletPageVisible && entryScreen === 'chooser' && <SavedWalletChooser snapshot={snapshot} onBack={() => setEntryScreen('menu')} onRestore={() => setEntryScreen('restore')} onSensitiveChange={setSensitive} onStart={startAnotherWallet} />}
                                 {lockedPhase && snapshot.phase === 'locked' && !walletPageVisible && entryScreen === 'another' && <AnotherWalletMenu flags={snapshot.flags} onBack={() => setEntryScreen('menu')} onRestore={() => setEntryScreen('restore')} onStart={startAnotherWallet} />}

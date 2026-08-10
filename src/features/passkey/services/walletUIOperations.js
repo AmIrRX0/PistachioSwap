@@ -23,6 +23,12 @@ function hasRecentRecoveryRevealAuthorization(
         now - verifiedAt < RECOVERY_REVEAL_AUTH_GRACE_MS
 }
 
+function canUseRecoveryRevealGracePath() {
+    return typeof manager.reauthenticate === 'function' &&
+        typeof manager.requireUnlocked === 'function' &&
+        typeof manager.client?.request === 'function'
+}
+
 async function ensureRecoveryRevealAuthorization() {
     const snapshot = manager.snapshot()
     const workerReady = manager.phase === 'unlocked' &&
@@ -39,7 +45,11 @@ async function ensureRecoveryRevealAuthorization() {
     manager.requireUnlocked()
 }
 
-async function revealWorkerSecret(method, field) {
+async function revealWorkerSecret(method, field, fallback) {
+    // Lightweight test/dev manager doubles do not expose the worker client.
+    // Preserve the old public manager behavior for those implementations.
+    if (!canUseRecoveryRevealGracePath()) return fallback()
+
     await ensureRecoveryRevealAuthorization()
     const result = await manager.client.request(method)
     const secret = result?.[field]
@@ -56,10 +66,12 @@ const overrides = Object.freeze({
     revealRecoveryPhrase: () => revealWorkerSecret(
         'revealRecoveryPhrase',
         'recoveryPhrase',
+        () => manager.revealRecoveryPhrase(),
     ),
     revealPrivateKey: () => revealWorkerSecret(
         'revealPrivateKey',
         'privateKey',
+        () => manager.revealPrivateKey(),
     ),
 })
 
@@ -78,6 +90,7 @@ export const walletUIOperations = new Proxy(manager, {
 
 export const walletUIOperationInternals = {
     RECOVERY_REVEAL_AUTH_GRACE_MS,
+    canUseRecoveryRevealGracePath,
     hasRecentRecoveryRevealAuthorization,
     latestVerificationAt,
 }

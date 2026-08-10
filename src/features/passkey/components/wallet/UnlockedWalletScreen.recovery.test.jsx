@@ -63,13 +63,13 @@ describe('recovery phrase reveal UI', () => {
         const words = within(region).getAllByRole('listitem')
 
         expect(words).toHaveLength(12)
-        expect(words[0]).toHaveTextContent('1.')
-        expect(words[0]).toHaveTextContent('alpha')
-        expect(words[11]).toHaveTextContent('12.')
-        expect(words[11]).toHaveTextContent('lima')
+        expect(words[0]?.textContent).toContain('1.')
+        expect(words[0]?.textContent).toContain('alpha')
+        expect(words[11]?.textContent).toContain('12.')
+        expect(words[11]?.textContent).toContain('lima')
 
         fireEvent.click(within(region).getByRole('button', { name: 'Copy recovery phrase' }))
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(phrase)
-        expect(await within(region).findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+        await within(region).findByRole('button', { name: 'Copied' })
     })
 })

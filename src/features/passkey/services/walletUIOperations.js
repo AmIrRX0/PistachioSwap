@@ -26,14 +26,14 @@ function hasRecentRecoveryRevealAuthorization(
 function canUseRecoveryRevealGracePath() {
     return typeof manager.reauthenticate === 'function' &&
         typeof manager.requireUnlocked === 'function' &&
-        typeof manager.client?.request === 'function'
+        'client' in manager
 }
 
 async function ensureRecoveryRevealAuthorization() {
     const snapshot = manager.snapshot()
     const workerReady = manager.phase === 'unlocked' &&
         Boolean(manager.address) &&
-        Boolean(manager.client)
+        typeof manager.client?.request === 'function'
 
     if (workerReady && hasRecentRecoveryRevealAuthorization(snapshot)) return
 
@@ -43,6 +43,11 @@ async function ensureRecoveryRevealAuthorization() {
     // requested five-minute passkey grace window.
     await manager.reauthenticate()
     manager.requireUnlocked()
+    if (typeof manager.client?.request !== 'function') {
+        const error = new Error('Pistachio Wallet recovery worker is unavailable after verification.')
+        error.code = 'PISTACHIO_RECOVERY_WORKER_UNAVAILABLE'
+        throw error
+    }
 }
 
 async function revealWorkerSecret(method, field, fallback) {

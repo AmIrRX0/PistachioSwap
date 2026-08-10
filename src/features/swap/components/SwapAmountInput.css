@@ -1,0 +1,8 @@
+.sell-amount-input:focus,
+.sell-amount-input:focus-visible,
+.buy-amount-input:focus,
+.buy-amount-input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}

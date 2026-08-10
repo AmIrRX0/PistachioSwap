@@ -94,6 +94,7 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
     const [error, setError] = useState(null)
     const secretRef = useRef(null)
     const [secretKind, setSecretKind] = useState(null)
+    const [secretCopied, setSecretCopied] = useState(false)
     const [newLabel, setNewLabel] = useState('Backup passkey')
     const [labels, setLabels] = useState(() => Object.fromEntries(snapshot.vault.keyWraps.map((wrap) => [wrap.id, wrap.label])))
     const [keystoreBackupPassword, setKeystoreBackupPassword] = useState('')
@@ -130,6 +131,7 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
         if (clearTimer.current) clearTimeout(clearTimer.current)
         clearTimer.current = null
         secretRef.current = null
+        setSecretCopied(false)
         setSecretKind(null)
     }
 
@@ -138,6 +140,20 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
         secretRef.current = value
         setSecretKind(kind)
         clearTimer.current = setTimeout(hideSecret, 60_000)
+    }
+
+    async function copyRecoveryPhrase() {
+        const phrase = String(secretRef.current ?? '').trim().replace(/\s+/gu, ' ')
+        if (!phrase) return
+        try {
+            if (!navigator.clipboard?.writeText) {
+                throw new Error('Clipboard access is unavailable.')
+            }
+            await navigator.clipboard.writeText(phrase)
+            setSecretCopied(true)
+        } catch (nextError) {
+            setError(nextError)
+        }
     }
 
     async function exportKeystoreBackup() {
@@ -150,6 +166,10 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
         setKeystoreBackupConfirmation('')
         if (keystore) saveTextFile('pistachio-wallet-v3-keystore.json', keystore)
     }
+
+    const recoveryWords = secretKind === 'Recovery phrase'
+        ? String(secretRef.current ?? '').trim().split(/\s+/gu).filter(Boolean)
+        : []
 
     return (
         <div className="pistachio-wallet-stack">
@@ -199,8 +219,47 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
                 {secretKind && (
                     <div className="pistachio-secret-reveal" role="region" aria-label={secretKind}>
                         <div><strong>{secretKind}</strong><span>Hidden automatically after 60 seconds</span></div>
-                        <code>{secretRef.current}</code>
-                        <button type="button" onClick={hideSecret}>Hide</button>
+                        {secretKind === 'Recovery phrase' ? (
+                            <>
+                                <ol
+                                    aria-label="Recovery phrase words"
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                        gap: '8px 16px',
+                                        listStyle: 'none',
+                                        margin: 0,
+                                        padding: 0,
+                                    }}
+                                >
+                                    {recoveryWords.map((word, index) => (
+                                        <li
+                                            key={`${index}-${word}`}
+                                            style={{
+                                                alignItems: 'center',
+                                                display: 'grid',
+                                                gridTemplateColumns: '2rem minmax(0, 1fr)',
+                                                gap: '8px',
+                                            }}
+                                        >
+                                            <span aria-hidden="true" style={{ opacity: 0.65, textAlign: 'right' }}>{index + 1}.</span>
+                                            <span style={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{word}</span>
+                                        </li>
+                                    ))}
+                                </ol>
+                                <div className="pistachio-wallet-inline">
+                                    <button type="button" onClick={copyRecoveryPhrase}>
+                                        <Copy aria-hidden="true" /> {secretCopied ? 'Copied' : 'Copy recovery phrase'}
+                                    </button>
+                                    <button type="button" onClick={hideSecret}>Hide</button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <code>{secretRef.current}</code>
+                                <button type="button" onClick={hideSecret}>Hide</button>
+                            </>
+                        )}
                     </div>
                 )}
                 <p className="pistachio-wallet-note">A passkey may sync while this browser’s encrypted wallet data does not. Test every backup before relying on it.</p>

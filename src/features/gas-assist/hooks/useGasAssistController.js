@@ -1,6 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { formatUnits } from 'viem'
 import { useZeroXGaslessSwap } from './useZeroXGaslessSwap.js'
 import { usePrepaidSponsorship } from './usePrepaidSponsorship.js'
+import { useSponsorshipPreview } from './useSponsorshipPreview.js'
+
+function usdMicros(value) {
+    const normalized = String(value ?? '').trim()
+    if (!/^\d+(?:\.\d+)?$/u.test(normalized)) return null
+    const [whole, fraction = ''] = normalized.split('.')
+    if (fraction.length > 6) return null
+    return BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, '0') || '0')
+}
+
+function commercialFeeRaw(preview) {
+    try {
+        const totalRaw = BigInt(preview.paymentAmountRaw)
+        const commercialUsd = usdMicros(preview.amountsUsd?.commercialFee)
+        const totalUsd = usdMicros(preview.amountsUsd?.totalPrepayment)
+        if (commercialUsd === null || totalUsd === null || totalUsd <= 0n) return 0n
+        return (totalRaw * commercialUsd + totalUsd - 1n) / totalUsd
+    } catch {
+        return 0n
+    }
+}
 
 /**
  * Owns Gas Assist quote/dialog/prepayment orchestration while keeping normal swap approval separate.
@@ -44,9 +66,20 @@ export function useGasAssistController({
         onConfirmed,
     })
 
-    // Keep the old 0x Gasless dialog hook mounted for API compatibility, but never
-    // ask the provider-integrator endpoint to price a low-BNB wallet. The exact
-    // prepaid order service owns payment, approval, and swap sponsorship.
+    const prepaidRequired = gasAssistRequested
+    const prepaidEnabled = prepaidSponsorship.configStatus === 'success' &&
+        prepaidSponsorship.config?.enabled === true
+    const previewState = useSponsorshipPreview({
+        quoteEndpoint,
+        walletAddress: account,
+        sellToken,
+        buyToken,
+        grossInputAmount: activeAmountIn,
+        slippageBps: Math.max(30, configuredSlippageBps),
+        required: gasAssistRequested,
+        enabled: prepaidEnabled && activeAmountSide === 'sell',
+    })
+
     const gasAssist = useZeroXGaslessSwap({
         quoteEndpoint,
         walletAddress: account,
@@ -62,18 +95,68 @@ export function useGasAssistController({
         onConfirmed,
     })
 
-    const prepaidRequired = gasAssistRequested
-    const prepaidEnabled = prepaidSponsorship.configStatus === 'success' &&
-        prepaidSponsorship.config?.enabled === true
+    const previewQuote = useMemo(() => {
+        const preview = previewState.preview
+        if (!prepaidEnabled || !preview || !sellToken?.address || !buyToken) return null
+        const commercialRaw = commercialFeeRaw(preview)
+        return {
+            prepaidSponsorshipRequired: true,
+            selectedQuote: {
+                chainId: 56,
+                mode: 'EXACT_INPUT',
+                sellToken: sellToken.address,
+                buyToken: buyToken.isNative ? 'native' : buyToken.address,
+                sellAmount: preview.netSwapAmountRaw,
+                maximumSellAmount: preview.netSwapAmountRaw,
+                buyAmount: preview.expectedOutputRaw,
+                minimumBuyAmount: preview.minimumOutputRaw,
+                expiresAt: preview.expiresAt,
+                estimatedGasUsd: preview.amountsUsd?.gasReserve ?? null,
+                platformFee: {
+                    amount: commercialRaw.toString(),
+                    bps: 0,
+                    effectiveBps: 0,
+                    token: sellToken.address,
+                },
+            },
+        }
+    }, [buyToken, prepaidEnabled, previewState.preview, sellToken?.address])
+
     const executionMode = gasAssistRequested ? gaslessMode : normalMode
-    const activeQuote = gasAssistRequested
-        ? prepaidEnabled ? { prepaidSponsorshipRequired: true } : null
-        : normalQuote
+    const activeQuote = gasAssistRequested ? previewQuote : normalQuote
     const activeQuoteStatus = gasAssistRequested
         ? prepaidSponsorship.configStatus === 'idle' || prepaidSponsorship.configStatus === 'loading'
             ? 'loading'
-            : prepaidEnabled ? 'success' : 'error'
+            : !prepaidEnabled
+                ? 'error'
+                : activeAmountSide !== 'sell'
+                    ? 'error'
+                    : previewState.status
         : normalQuoteStatus
+
+    useEffect(() => {
+        if (!gasAssistRequested || activeAmountSide !== 'sell' || buyInputDenomination !== 'TOKEN') return
+        if (previewState.status !== 'success' || !previewState.preview || !buyToken) {
+            if (previewState.status === 'loading' || previewState.status === 'error') setBuyAmount('0')
+            return
+        }
+        try {
+            setBuyAmount(formatUnits(
+                BigInt(previewState.preview.expectedOutputRaw),
+                Number(buyToken.decimals),
+            ))
+        } catch {
+            setBuyAmount('0')
+        }
+    }, [
+        activeAmountSide,
+        buyInputDenomination,
+        buyToken,
+        gasAssistRequested,
+        previewState.preview,
+        previewState.status,
+        setBuyAmount,
+    ])
 
     useEffect(() => {
         if (!gasAssistRequested) return
@@ -91,13 +174,37 @@ export function useGasAssistController({
         setVisibleStatus,
     ])
 
+    useEffect(() => {
+        if (!gasAssistRequested || !prepaidEnabled || activeAmountSide !== 'sell') return
+        if (previewState.status !== 'error') return
+        const code = previewState.error?.code ?? 'SPONSORSHIP_PREVIEW_UNAVAILABLE'
+        const message = previewState.error?.message ??
+            'Gas Assist could not preview this swap.'
+        setVisibleStatus(`${code}: ${message}`)
+    }, [
+        activeAmountSide,
+        gasAssistRequested,
+        prepaidEnabled,
+        previewState.error,
+        previewState.status,
+        setVisibleStatus,
+    ])
+
     return {
         gasAssist,
         prepaidSponsorship,
         prepaidRequired,
+        preview: prepaidEnabled ? previewState.preview : null,
+        previewStatus: prepaidEnabled ? previewState.status : 'idle',
+        previewError: prepaidEnabled ? previewState.error : null,
         executionMode,
         activeQuote,
         activeQuoteStatus,
         isGasless: executionMode === gaslessMode,
     }
+}
+
+export const gasAssistControllerInternals = {
+    commercialFeeRaw,
+    usdMicros,
 }

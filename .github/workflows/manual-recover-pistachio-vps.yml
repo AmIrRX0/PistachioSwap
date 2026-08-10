@@ -1,0 +1,150 @@
+name: Manual recover Pistachio VPS
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      TARGET_SHA: 2327e546312451324a43f594d246b590ee168d3e
+      API_SERVICE: pistachioswap-api
+    steps:
+      - name: Validate deployment secrets
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+          for name in VPS_SSH_KEY VPS_KNOWN_HOSTS VPS_PORT VPS_USER VPS_HOST VPS_APP_DIR; do
+            [[ -n "${!name:-}" ]] || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - name: Prepare SSH
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          sed -i 's/\r$//' ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+
+      - name: Recover and activate uploaded release
+        shell: bash
+        env:
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+          printf -v app_dir_q '%q' "$VPS_APP_DIR"
+          printf -v sha_q '%q' "$TARGET_SHA"
+          printf -v service_q '%q' "$API_SERVICE"
+
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            "bash -s -- $app_dir_q $sha_q $service_q" <<'REMOTE'
+          set -euo pipefail
+
+          APP_DIR="$1"
+          TARGET_SHA="$2"
+          API_SERVICE="$3"
+          CURRENT_LINK="$APP_DIR/current"
+
+          release_dir="$(
+            find "$APP_DIR/releases" \
+              -mindepth 1 -maxdepth 1 -type d \
+              -name "${TARGET_SHA}-*" \
+              -printf '%T@ %p\n' \
+              | sort -nr \
+              | head -n1 \
+              | cut -d' ' -f2-
+          )"
+
+          [[ -n "$release_dir" && -d "$release_dir" ]] || {
+            echo "Uploaded release directory for $TARGET_SHA was not found." >&2
+            exit 1
+          }
+          [[ -s "$release_dir/package.json" ]] || { echo "Release package.json missing." >&2; exit 1; }
+          [[ -s "$release_dir/apps/api/package.json" ]] || { echo "API package missing." >&2; exit 1; }
+          [[ -s "$release_dir/dist/index.html" ]] || { echo "Frontend build missing." >&2; exit 1; }
+          [[ -s "$release_dir/ecosystem.config.cjs" ]] || { echo "PM2 ecosystem config missing." >&2; exit 1; }
+
+          previous_target=''
+          if [[ -L "$CURRENT_LINK" ]]; then
+            previous_target="$(readlink -f "$CURRENT_LINK")"
+          fi
+
+          activate() {
+            local target="$1"
+            rm -f "$APP_DIR/current.next"
+            ln -s "$target" "$APP_DIR/current.next"
+            mv -Tf "$APP_DIR/current.next" "$CURRENT_LINK"
+
+            pm2 delete "$API_SERVICE" >/dev/null 2>&1 || true
+            PISTACHIO_PUBLIC_ROOT="$target" \
+              pm2 start "$target/ecosystem.config.cjs" \
+                --only "$API_SERVICE" \
+                --update-env
+          }
+
+          wait_health() {
+            for _ in {1..40}; do
+              if curl --fail --silent --show-error --max-time 4 \
+                http://127.0.0.1:3006/health >/dev/null 2>&1; then
+                return 0
+              fi
+              sleep 1
+            done
+            return 1
+          }
+
+          echo "Activating $release_dir"
+          if activate "$release_dir" && wait_health; then
+            pm2 save
+            echo "PistachioSwap $TARGET_SHA is healthy and active."
+            readlink -f "$CURRENT_LINK"
+            curl --fail --silent --show-error http://127.0.0.1:3006/health
+            echo
+            exit 0
+          fi
+
+          echo "Activation failed; attempting rollback." >&2
+          pm2 logs "$API_SERVICE" --lines 120 --nostream 2>/dev/null || true
+
+          if [[ -n "$previous_target" && -d "$previous_target" ]]; then
+            activate "$previous_target" || true
+            if wait_health; then
+              pm2 save
+              echo "Rollback succeeded: $previous_target" >&2
+            else
+              echo "Rollback also failed." >&2
+            fi
+          fi
+          exit 1
+          REMOTE

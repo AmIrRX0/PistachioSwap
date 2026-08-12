@@ -16,6 +16,19 @@ const FORWARDED_RESPONSE_HEADERS = [
     'x-ratelimit-remaining',
     'x-ratelimit-reset',
 ] as const
+const SAFE_PATH_SEGMENT = '[A-Za-z0-9_-]{1,160}'
+const PUBLIC_PROXY_ROUTES = Object.freeze([
+    ['GET', /^\/v1\/gas-assist\/config$/u],
+    ['POST', /^\/v1\/gas-assist\/(?:price|quote|submit)$/u],
+    ['GET', new RegExp(`^/v1/gas-assist/status/${SAFE_PATH_SEGMENT}$`, 'u')],
+    ['GET', /^\/v1\/sponsorship\/config$/u],
+    ['POST', /^\/v1\/sponsorship\/preview$/u],
+    ['POST', /^\/v1\/sponsorship\/auth\/(?:challenge|verify)$/u],
+    ['POST', /^\/v1\/sponsorship\/orders$/u],
+    ['GET', new RegExp(`^/v1/sponsorship/orders/${SAFE_PATH_SEGMENT}$`, 'u')],
+    ['POST', new RegExp(`^/v1/sponsorship/orders/${SAFE_PATH_SEGMENT}/(?:package/(?:prepare|submit)|payment/prepare|approval/prepare|continuation)$`, 'u')],
+    ['POST', new RegExp(`^/v1/sponsorship/intents/${SAFE_PATH_SEGMENT}/submit$`, 'u')],
+] as const)
 
 type ProxyConfig = {
     baseUrl: URL
@@ -96,14 +109,25 @@ export function readGasAssistProxyConfig(): ProxyConfig | null {
     }
 }
 
-function disabledResponse(pathname: string) {
-    const publicPathname = pathname.startsWith('/api/v1/')
+function publicPathname(pathname: string) {
+    return pathname.startsWith('/api/v1/')
         ? pathname.slice('/api'.length)
         : pathname
-    if (publicPathname === '/v1/gas-assist/config') {
+}
+
+export function isPublicGasAssistProxyRoute(method: string, pathname: string) {
+    const normalizedMethod = method.toUpperCase()
+    const normalizedPath = publicPathname(pathname)
+    return PUBLIC_PROXY_ROUTES.some(([allowedMethod, pattern]) =>
+        allowedMethod === normalizedMethod && pattern.test(normalizedPath))
+}
+
+function disabledResponse(pathname: string) {
+    const normalizedPath = publicPathname(pathname)
+    if (normalizedPath === '/v1/gas-assist/config') {
         return { enabled: false, mode: 'disabled' }
     }
-    if (publicPathname === '/v1/sponsorship/config') {
+    if (normalizedPath === '/v1/sponsorship/config') {
         return { enabled: false, chainId: 56 }
     }
     return null
@@ -118,12 +142,10 @@ function requestBody(request: FastifyRequest) {
 function targetUrl(request: FastifyRequest, baseUrl: URL) {
     const rawUrl = request.raw.url || request.url
     const parsed = new URL(rawUrl, 'http://pistachio.local')
-    const publicPathname = parsed.pathname.startsWith('/api/v1/')
-        ? parsed.pathname.slice('/api'.length)
-        : parsed.pathname
+    const normalizedPath = publicPathname(parsed.pathname)
     const target = new URL(baseUrl)
     const basePath = target.pathname.replace(/\/+$/, '')
-    target.pathname = `${basePath}${publicPathname}`.replace(/\/{2,}/g, '/')
+    target.pathname = `${basePath}${normalizedPath}`.replace(/\/{2,}/g, '/')
     target.search = parsed.search
     return target
 }
@@ -175,12 +197,21 @@ export async function proxyGasAssistRequest(
     request: FastifyRequest,
     reply: FastifyReply,
 ) {
-    const config = readGasAssistProxyConfig()
     const pathname = new URL(
         request.raw.url || request.url,
         'http://pistachio.local',
     ).pathname
 
+    if (!isPublicGasAssistProxyRoute(request.method, pathname)) {
+        return reply.code(404).send({
+            error: {
+                code: 'GAS_ASSIST_ROUTE_NOT_EXPOSED',
+                message: 'This Gas Assist route is not publicly exposed.',
+            },
+        })
+    }
+
+    const config = readGasAssistProxyConfig()
     if (!config) {
         const disabled = disabledResponse(pathname)
         if (disabled) return disabled
@@ -240,4 +271,9 @@ export const gasAssistProxyRoutes: FastifyPluginAsync = async (app) => {
         url: '/v1/sponsorship/*',
         handler: proxyGasAssistRequest,
     })
+}
+
+export const gasAssistProxyInternals = {
+    PUBLIC_PROXY_ROUTES,
+    publicPathname,
 }

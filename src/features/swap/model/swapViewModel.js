@@ -109,6 +109,9 @@ export function getWalletBalanceNotice({
     const failedChainIds = Array.isArray(walletTokenFailedChainIds)
         ? walletTokenFailedChainIds
         : []
+    if (!hasUsableWalletTokens && failedChainIds.length === 1) {
+        return unavailableWalletChainNotice(failedChainIds)
+    }
     const activeChainFailed = failedChainIds.some((chainId) =>
         Number(chainId) === Number(activeChainId))
     return activeChainFailed

@@ -10,6 +10,7 @@ import {
 const SUPPORTED_CONNECTOR_IDS = new Set([
     'pistachio-local',
 ])
+const PACKAGE_SIGN_METHOD = 'pistachio_signMegaFuelPackage'
 
 function signingError(code, message, details = {}) {
     const error = new Error(message)
@@ -40,11 +41,12 @@ export function detectRawTransactionSigning({ connector, walletClient }) {
     const result = Object.freeze({
         rawTransactionSigningSupported: supported,
         method: supported ? 'eth_signTransaction' : null,
+        packageMethod: supported ? PACKAGE_SIGN_METHOD : null,
         transport,
         status: supported ? 'verified' : 'unsupported',
         scope: supported ? 'eip155:56' : null,
         account: null,
-        approvedMethods: supported ? ['eth_signTransaction'] : [],
+        approvedMethods: supported ? ['eth_signTransaction', PACKAGE_SIGN_METHOD] : [],
         reasonCode: supported ? null : 'PISTACHIO_WALLET_REQUIRED',
     })
     gasAssistTrace('signing.capability.detected', {
@@ -190,11 +192,12 @@ function orderedPackageTransactions(preparedPackage) {
             { stage: 'package.validate' },
         )
     }
-    if (!Number.isFinite(Date.parse(preparedPackage.expiresAt)) ||
+    if (typeof preparedPackage?.orderId !== 'string' || !preparedPackage.orderId ||
+        !Number.isFinite(Date.parse(preparedPackage.expiresAt)) ||
         Date.parse(preparedPackage.expiresAt) <= Date.now()) {
         throw signingError(
             'INTENT_EXPIRED',
-            'The prepared Gas Assist package expired.',
+            'The prepared Gas Assist package expired or is malformed.',
             { stage: 'package.validate' },
         )
     }
@@ -213,10 +216,18 @@ function orderedPackageTransactions(preparedPackage) {
     const ordered = expectedActions.map((action) => byAction.get(action))
     const intentIds = new Set(ordered.map((item) => item.intentId))
     if (intentIds.size !== expectedActions.length ||
-        ordered.some((item) => typeof item.intentId !== 'string' || !item.intentId)) {
+        ordered.some((item) => typeof item.intentId !== 'string' || !item.intentId ||
+            !Number.isFinite(Date.parse(item.expiresAt)) || Date.parse(item.expiresAt) <= Date.now())) {
         throw signingError(
             'SPONSORSHIP_PACKAGE_INVALID',
-            'The prepared Gas Assist package contains duplicate or missing intents.',
+            'The prepared Gas Assist package contains duplicate, missing, or expired intents.',
+            { stage: 'package.validate' },
+        )
+    }
+    if (ordered.some((item) => Date.parse(item.expiresAt) > Date.parse(preparedPackage.expiresAt))) {
+        throw signingError(
+            'SPONSORSHIP_PACKAGE_INVALID',
+            'A Gas Assist intent outlives the package expiry.',
             { stage: 'package.validate' },
         )
     }
@@ -241,6 +252,37 @@ function orderedPackageTransactions(preparedPackage) {
     return ordered
 }
 
+function validatePackageSigningResponse(response, preparedPackage, ordered) {
+    if (!response || typeof response !== 'object' || Array.isArray(response) ||
+        response.orderId !== preparedPackage.orderId ||
+        !Array.isArray(response.signedTransactions) ||
+        response.signedTransactions.length !== ordered.length) {
+        throw signingError(
+            'SPONSORSHIP_PACKAGE_INVALID',
+            'Pistachio Wallet returned an invalid Gas Assist package signature response.',
+            { stage: 'package.sign' },
+        )
+    }
+    return response.signedTransactions.map((signed, index) => {
+        const expected = ordered[index]
+        if (!signed || typeof signed !== 'object' || Array.isArray(signed) ||
+            signed.action !== expected.action || signed.intentId !== expected.intentId ||
+            typeof signed.signedRawTransaction !== 'string' ||
+            !/^0x(?:[0-9a-f]{2})+$/iu.test(signed.signedRawTransaction)) {
+            throw signingError(
+                'SPONSORSHIP_PACKAGE_INVALID',
+                'Pistachio Wallet returned mismatched Gas Assist package signatures.',
+                { stage: 'package.sign', action: expected.action },
+            )
+        }
+        return {
+            intentId: expected.intentId,
+            action: expected.action,
+            signedRawTransaction: signed.signedRawTransaction,
+        }
+    })
+}
+
 export async function signPreparedSponsoredPackage({
     transport,
     capability,
@@ -250,10 +292,15 @@ export async function signPreparedSponsoredPackage({
     multichainAccount,
     submitSignedPackage,
 }) {
-    if (transport !== 'pistachio-local' || typeof submitSignedPackage !== 'function') {
+    if (
+        transport !== 'pistachio-local' ||
+        capability?.packageMethod !== PACKAGE_SIGN_METHOD ||
+        typeof walletClient?.request !== 'function' ||
+        typeof submitSignedPackage !== 'function'
+    ) {
         throw signingError(
-            'SPONSORSHIP_PACKAGE_INVALID',
-            'The prepared Gas Assist package is invalid.',
+            'PISTACHIO_BATCH_SIGNING_REQUIRED',
+            'Gas Assist requires the Pistachio Wallet one-confirmation package signer.',
             { stage: 'package.validate' },
         )
     }
@@ -262,57 +309,63 @@ export async function signPreparedSponsoredPackage({
         orderId: preparedPackage?.orderId,
     })
     const ordered = orderedPackageTransactions(preparedPackage)
+    const normalizedTransactions = ordered.map((item) =>
+        normalizePreparedSponsoredTransaction(
+            item.transaction,
+            authenticatedWalletAddress,
+        ))
     gasAssistTrace('signing.package.validate.success', {
         orderId: preparedPackage.orderId,
         actions: ordered.map((item) => item.action),
-        nonces: ordered.map((item) => item.transaction.nonce),
+        nonces: normalizedTransactions.map((item) => item.nonce),
     })
 
-    const signedTransactions = []
+    let signedTransactions = []
     try {
-        for (const intent of ordered) {
-            const action = intent.action
-            if (!Number.isFinite(Date.parse(intent.expiresAt)) ||
-                Date.parse(intent.expiresAt) <= Date.now()) {
-                throw signingError(
-                    'INTENT_EXPIRED',
-                    `The ${action} signing intent expired.`,
-                    { stage: 'package.sign', action },
-                )
-            }
-            gasAssistTrace('signing.package.transaction.start', {
-                orderId: preparedPackage.orderId,
-                action,
-            })
-            const normalizedTransaction = normalizePreparedSponsoredTransaction(
-                intent.transaction,
-                authenticatedWalletAddress,
-            )
-            const signedRawTransaction = await signRawSponsoredTransaction({
-                capability,
-                walletClient,
-                transaction: normalizedTransaction,
-                action,
-            })
+        gasAssistTrace('signing.package.wallet-request.start', {
+            orderId: preparedPackage.orderId,
+            transactionCount: ordered.length,
+        })
+        const response = await walletClient.request({
+            method: PACKAGE_SIGN_METHOD,
+            params: [preparedPackage],
+        })
+        signedTransactions = validatePackageSigningResponse(
+            response,
+            preparedPackage,
+            ordered,
+        )
+        gasAssistTrace('signing.package.wallet-request.success', {
+            orderId: preparedPackage.orderId,
+            transactionCount: signedTransactions.length,
+        })
+
+        for (let index = 0; index < signedTransactions.length; index += 1) {
+            const signed = signedTransactions[index]
+            const normalizedTransaction = normalizedTransactions[index]
             gasAssistTrace('signing.package.transaction.validate.start', {
                 orderId: preparedPackage.orderId,
-                action,
+                action: signed.action,
             })
             await validateSignedPreparedTransaction({
-                signedRawTransaction,
+                signedRawTransaction: signed.signedRawTransaction,
                 normalizedTransaction,
                 authenticatedWalletAddress,
                 multichainAccount: multichainAccount ?? authenticatedWalletAddress,
             })
-            signedTransactions.push({
-                intentId: intent.intentId,
-                action,
-                signedRawTransaction,
-            })
-            gasAssistTrace('signing.package.transaction.success', {
+            gasAssistTrace('signing.package.transaction.validate.success', {
                 orderId: preparedPackage.orderId,
-                action,
+                action: signed.action,
             })
+        }
+
+        if (!Number.isFinite(Date.parse(preparedPackage.expiresAt)) ||
+            Date.parse(preparedPackage.expiresAt) <= Date.now()) {
+            throw signingError(
+                'INTENT_EXPIRED',
+                'The signed Gas Assist package expired before submission.',
+                { stage: 'package.submit' },
+            )
         }
         gasAssistTrace('signing.package.submit.start', {
             orderId: preparedPackage.orderId,
@@ -337,7 +390,9 @@ export async function signPreparedSponsoredPackage({
 }
 
 export const rawSigningInternals = {
+    PACKAGE_SIGN_METHOD,
     supportedConnectorIds: SUPPORTED_CONNECTOR_IDS,
     orderedPackageTransactions,
     transactionSummary,
+    validatePackageSigningResponse,
 }

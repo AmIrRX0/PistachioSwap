@@ -1,23 +1,26 @@
 name: Manual recover Pistachio VPS
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      target_sha:
+        description: Commit SHA of an already uploaded release to reactivate
+        required: true
+        default: 2327e546312451324a43f594d246b590ee168d3e
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   recover:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      TARGET_SHA: 2327e546312451324a43f594d246b590ee168d3e
+      TARGET_SHA: ${{ inputs.target_sha }}
       API_SERVICE: pistachioswap-api
     steps:
-      - name: Validate deployment secrets
+      - name: Validate target and deployment secrets
         shell: bash
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -28,6 +31,10 @@ jobs:
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
         run: |
           set -euo pipefail
+          [[ "$TARGET_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || {
+            echo "::error::target_sha must be a full 40-character commit SHA"
+            exit 1
+          }
           for name in VPS_SSH_KEY VPS_KNOWN_HOSTS VPS_PORT VPS_USER VPS_HOST VPS_APP_DIR; do
             [[ -n "${!name:-}" ]] || { echo "::error::Missing $name"; exit 1; }
           done

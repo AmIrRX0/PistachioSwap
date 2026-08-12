@@ -4,6 +4,8 @@ import { getCuratedEvmChain, isCuratedEvmChainId } from '../../../web3/curatedEv
 import { PISTACHIO_CHAIN_ID, PISTACHIO_CONNECTOR_ID } from './constants.js'
 import { getPistachioWalletManager } from './walletManager.js'
 
+const MEGAFUEL_PACKAGE_SIGN_METHOD = 'pistachio_signMegaFuelPackage'
+
 function snapshotAccount(snapshot) {
     if (snapshot.phase === 'unlocked' && snapshot.address) return snapshot.address
     if (snapshot.sessionActive && snapshot.vault?.address) return snapshot.vault.address
@@ -31,7 +33,17 @@ function createProvider(manager) {
         previousChainId = chainId
     })
     return Object.freeze({
-        request: (request) => manager.providerRequest(request),
+        request: (request) => {
+            if (request?.method === MEGAFUEL_PACKAGE_SIGN_METHOD) {
+                if (!Array.isArray(request.params) || request.params.length !== 1) {
+                    const error = new Error('A single Gas Assist package is required.')
+                    error.code = 'SPONSORSHIP_PACKAGE_INVALID'
+                    throw error
+                }
+                return manager.signMegaFuelPackage(request.params[0])
+            }
+            return manager.providerRequest(request)
+        },
         on(event, listener) {
             const eventListeners = listeners.get(event) ?? new Set()
             eventListeners.add(listener)
@@ -154,4 +166,9 @@ export function pistachioWalletConnector(appKitModal = {}) {
     return createConnector((config) => createConnectorConfig(config, getPistachioWalletManager(), appKitModal))
 }
 
-export const pistachioConnectorInternals = { createConnectorConfig, createProvider, snapshotAccount }
+export const pistachioConnectorInternals = {
+    MEGAFUEL_PACKAGE_SIGN_METHOD,
+    createConnectorConfig,
+    createProvider,
+    snapshotAccount,
+}

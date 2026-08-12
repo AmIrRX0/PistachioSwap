@@ -48,6 +48,10 @@ function createManager({ withVault = true } = {}) {
         selectVault: vi.fn(async function selectVault() {}),
         sendTransaction: vi.fn(async () => '0xtransaction'),
         sessionActive: false,
+        signMegaFuelPackage: vi.fn(async function signMegaFuelPackage(input) {
+            await this.ensureUnlockedForSigning()
+            return { orderId: input.orderId, signedTransactions: [] }
+        }),
         signMegaFuelTransaction: vi.fn(async () => '0xmegafuel'),
         signMessage: vi.fn(async function signMessage() {
             await this.ensureUnlockedForSigning()
@@ -142,6 +146,28 @@ describe('production Pistachio Wallet hardening', () => {
 
         await expect(manager.signMessage({ message: 'Confirm' }))
             .resolves.toBe('0xsignature')
+        expect(originalUnlock).toHaveBeenCalledOnce()
+        expect(originalLock).toHaveBeenCalledOnce()
+        expect(manager).toMatchObject({
+            address: null,
+            client: null,
+            phase: 'locked',
+            resumeReauthPending: true,
+            sessionActive: true,
+        })
+    })
+
+    it('treats one-shot Gas Assist package signing as a sensitive action and wipes the worker afterward', async () => {
+        const manager = createManager()
+        const originalPackageSigner = manager.signMegaFuelPackage
+        const originalLock = manager.lock
+        const originalUnlock = manager.unlock
+        manager.sessionActive = true
+        hardenPistachioWalletManager(manager)
+
+        await expect(manager.signMegaFuelPackage({ orderId: 'order-1' }))
+            .resolves.toEqual({ orderId: 'order-1', signedTransactions: [] })
+        expect(originalPackageSigner).toHaveBeenCalledOnce()
         expect(originalUnlock).toHaveBeenCalledOnce()
         expect(originalLock).toHaveBeenCalledOnce()
         expect(manager).toMatchObject({

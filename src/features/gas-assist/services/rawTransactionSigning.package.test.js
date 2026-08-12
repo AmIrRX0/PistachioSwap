@@ -30,6 +30,7 @@ const transactions = [
 const capability = {
     rawTransactionSigningSupported: true,
     method: 'eth_signTransaction',
+    packageMethod: 'pistachio_signMegaFuelPackage',
     transport: 'pistachio-local',
 }
 
@@ -42,24 +43,37 @@ function preparedPackage(overrides = {}) {
     }
 }
 
+function packageSignatureResponse(pkg = preparedPackage()) {
+    return {
+        orderId: pkg.orderId,
+        signedTransactions: pkg.transactions.map((item, index) => ({
+            intentId: item.intentId,
+            action: item.action,
+            signedRawTransaction: `0x${String(index + 1).padStart(2, '0')}`,
+        })),
+    }
+}
+
 beforeEach(() => vi.restoreAllMocks())
 
 describe('pre-signed Gas Assist package', () => {
-    it('submits only after all three transactions are signed', async () => {
-        const request = vi.fn()
-            .mockResolvedValueOnce('0xaaaa')
-            .mockResolvedValueOnce('0xbbbb')
-            .mockResolvedValueOnce('0xcccc')
+    it('requests the wallet exactly once and submits all three validated signatures', async () => {
+        const pkg = preparedPackage()
+        const request = vi.fn(async () => packageSignatureResponse(pkg))
         const submitSignedPackage = vi.fn(async (values) => values)
         const result = await signPreparedSponsoredPackage({
             transport: 'pistachio-local',
             capability,
             walletClient: { request },
-            preparedPackage: preparedPackage(),
+            preparedPackage: pkg,
             authenticatedWalletAddress: transactions[0].transaction.from,
             submitSignedPackage,
         })
-        expect(request).toHaveBeenCalledTimes(3)
+        expect(request).toHaveBeenCalledTimes(1)
+        expect(request).toHaveBeenCalledWith({
+            method: 'pistachio_signMegaFuelPackage',
+            params: [pkg],
+        })
         expect(submitSignedPackage).toHaveBeenCalledTimes(1)
         expect(result.map((value) => value.action)).toEqual([
             'fee-payment-transfer',
@@ -68,19 +82,22 @@ describe('pre-signed Gas Assist package', () => {
         ])
     })
 
-    it('never submits a partial package', async () => {
-        const request = vi.fn()
-            .mockResolvedValueOnce('0xaaaa')
-            .mockRejectedValueOnce(new Error('rejected'))
+    it('never submits a partial or mismatched package response', async () => {
+        const pkg = preparedPackage()
+        const request = vi.fn(async () => ({
+            orderId: pkg.orderId,
+            signedTransactions: packageSignatureResponse(pkg).signedTransactions.slice(0, 2),
+        }))
         const submitSignedPackage = vi.fn()
         await expect(signPreparedSponsoredPackage({
             transport: 'pistachio-local',
             capability,
             walletClient: { request },
-            preparedPackage: preparedPackage(),
+            preparedPackage: pkg,
             authenticatedWalletAddress: transactions[0].transaction.from,
             submitSignedPackage,
-        })).rejects.toThrow('rejected')
+        })).rejects.toMatchObject({ code: 'SPONSORSHIP_PACKAGE_INVALID' })
+        expect(request).toHaveBeenCalledTimes(1)
         expect(submitSignedPackage).not.toHaveBeenCalled()
     })
 
@@ -121,5 +138,16 @@ describe('pre-signed Gas Assist package', () => {
             submitSignedPackage: vi.fn(),
         })).rejects.toMatchObject({ code: 'SPONSORSHIP_PACKAGE_NONCE_MISMATCH' })
         expect(request).not.toHaveBeenCalled()
+    })
+
+    it('fails closed when the wallet lacks the one-confirmation package method', async () => {
+        await expect(signPreparedSponsoredPackage({
+            transport: 'pistachio-local',
+            capability: { ...capability, packageMethod: null },
+            walletClient: { request: vi.fn() },
+            preparedPackage: preparedPackage(),
+            authenticatedWalletAddress: transactions[0].transaction.from,
+            submitSignedPackage: vi.fn(),
+        })).rejects.toMatchObject({ code: 'PISTACHIO_BATCH_SIGNING_REQUIRED' })
     })
 })

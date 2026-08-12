@@ -1,10 +1,10 @@
 # PistachioSwap Terms of Use
 
 **Effective date:** July 28, 2026  
-**Last updated:** July 28, 2026
+**Last updated:** August 11, 2026
 
 > [!IMPORTANT]
-> **Pre-launch legal notice:** PistachioSwap is currently a project name and the final operating company has not yet been identified in this repository. Before commercial launch, these Terms must be reviewed by qualified counsel and updated with the exact legal entity name, monitored contact information, final fees, supported jurisdictions, dispute provisions, and production functionality.
+> **Pre-launch legal notice.** PistachioSwap is currently a project name and this repository does not yet identify the final operating legal entity. Before commercial launch, these Terms must be reviewed by qualified counsel and updated with the operator's exact legal name and address, monitored contact information, final production fees/features, supported jurisdictions, regulatory/compliance decisions, and final dispute provisions. These Terms are a repository-aligned pre-launch draft, not a claim that every launch jurisdiction has been cleared.
 
 These Terms of Use (the "Terms") govern access to and use of the PistachioSwap website, wallet interface, public API, separately deployed Gas Assist service, software, and related services (collectively, the "Service"). "PistachioSwap," "we," "us," and "our" refer to the person or entity operating the Service under the PistachioSwap name.
 
@@ -12,180 +12,183 @@ By accessing or using the Service, you agree to these Terms. If you do not agree
 
 ## 1. Eligibility
 
-You may use the Service only if:
+You may use the Service only if you are at least 18 years old, have legal capacity to agree to these Terms, and may lawfully use the Service where you live and where you access it. You may not use the Service if sanctions, court orders, law, or other restrictions prohibit your use, or if you are acting for another person or entity without authority.
 
-- You are at least 18 years old and have legal capacity to enter into these Terms.
-- Your use is lawful where you live and where you access the Service.
-- You are not subject to sanctions or restrictions that prohibit your use of the Service.
-- You are not using the Service for another person or entity in violation of law or without authority.
-
-The Service is not offered where its use would require PistachioSwap to violate applicable law. Availability in an interface does not mean the Service is lawful or appropriate in every jurisdiction.
+Availability in the interface does not mean the Service is lawful, licensed, registered, or appropriate in every jurisdiction.
 
 ## 2. Pre-release software
 
-PistachioSwap is under active development. Features may be incomplete, disabled, experimental, unavailable, changed, or removed without notice. The Service has not been independently audited and may contain defects, vulnerabilities, inaccurate data, or interruptions.
+PistachioSwap is under active development. Features may be incomplete, experimental, disabled, changed, unavailable, or removed without notice. The Service has not been independently audited and may contain bugs, vulnerabilities, inaccurate information, provider failures, or interruptions.
 
-Do not use the Service with assets you cannot afford to lose. Test new features with small amounts and separate wallets.
+Do not use the Service with assets you cannot afford to lose. Test new functionality with small amounts and separate wallets.
 
 ## 3. What the Service does
 
 Depending on configuration, the Service may:
 
-- Connect to an external wallet.
-- Create or import an optional browser-based Pistachio Wallet.
-- Display public balances, assets, activity, prices, and token information.
-- Request and compare swap or bridge quotes from third-party providers.
-- Build transaction or typed-data requests for your review and signature.
-- Submit or monitor transactions you explicitly authorize.
-- Offer Gas Assist for certain eligible transactions when the connected wallet lacks native BNB.
+- connect to an external wallet;
+- create or import an optional browser-based Pistachio Wallet;
+- display public balances, assets, activity, prices, and token information;
+- request and compare swap or bridge quotes from third-party providers;
+- prepare transaction, typed-data, or message-signing requests;
+- submit or monitor transactions that you authorize; and
+- offer Gas Assist for certain eligible BNB Chain transactions when the wallet lacks native BNB.
 
-The public API exposes only bounded Gas Assist and sponsorship proxy routes. Gas Assist execution, quote state, settlement, recovery, replay protection, abuse controls, and administrative operations run through a separately deployed private service.
+The public API exposes bounded public routes. Gas Assist state, settlement, policy management, recovery, replay/abuse controls, and administrative functions run through a separately deployed private service. Private endpoints are not intended to be public merely because they exist in the private service.
 
 PistachioSwap may change supported chains, assets, providers, transaction types, limits, fees, and eligibility rules at any time.
 
 ## 4. Self-custody and wallet responsibility
 
-PistachioSwap is designed as a self-custodial interface. PistachioSwap does not take custody of your assets merely because you connect a wallet, view a balance, or request a quote.
+PistachioSwap is designed as a self-custodial interface. Connecting a wallet, requesting a quote, or using the optional local wallet does not by itself transfer custody of your assets to PistachioSwap.
 
-You are solely responsible for:
+You are responsible for:
 
-- Your wallet, device, browser profile, passkeys, passwords, private keys, recovery phrases, backups, and account security.
-- Reviewing every address, token, amount, network, approval, fee, and transaction before signing.
-- Maintaining enough native currency when Gas Assist is unavailable or ineligible.
-- Safely backing up any wallet you create or import.
-- Verifying that your wallet and browser are authentic and uncompromised.
+- your wallet, device, browser profile, passkeys, passwords, private keys, recovery phrases, backups, and account security;
+- reviewing addresses, tokens, amounts, networks, approvals, fees, routes, and transaction details before authorization;
+- maintaining recovery information for any local wallet you rely on;
+- ensuring that your device, browser, extensions, wallet software, and network are authentic and uncompromised; and
+- maintaining native currency when Gas Assist is unavailable or ineligible.
 
-PistachioSwap cannot recover a lost private key, forgotten recovery phrase, deleted local vault, inaccessible passkey, or asset sent to the wrong address or network.
+PistachioSwap cannot recover a lost private key, forgotten recovery phrase, deleted local vault, inaccessible passkey, or assets sent to an incorrect address or network.
 
-Never provide a private key, seed phrase, passkey secret, recovery phrase, API credential, or internal service token to anyone claiming to represent PistachioSwap.
+Never provide a private key, seed/recovery phrase, passkey secret, raw signed transaction, API credential, or internal service token to anyone claiming to represent PistachioSwap.
 
-## 5. Local Pistachio Wallet
+## 5. Local Pistachio Wallet and passkeys
 
-If enabled, Pistachio Wallet may store encrypted vault data and preferences in your browser's IndexedDB storage. Clearing site data, resetting a browser profile, uninstalling a browser, losing a device, or losing access to a passkey may permanently remove access unless you have a valid recovery backup.
+If enabled, Pistachio Wallet may store encrypted vault data and preferences in your browser's IndexedDB or related browser storage. Clearing site data, resetting or deleting a browser profile, uninstalling a browser, losing a device, or losing access to a required passkey may permanently remove access unless you have a valid recovery backup.
 
-Browser encryption and passkey protection reduce risk but do not make a compromised device safe. Malware, browser extensions, operating-system compromise, phishing, synchronization providers, or physical access may expose or destroy wallet information.
+The wallet may use WebAuthn/passkeys and a platform authenticator. Your fingerprint, face scan, or other biometric template is handled by your device/authenticator/platform and is not supplied to PistachioSwap as the biometric template. Your platform or passkey provider may have separate terms and privacy practices.
 
-You are responsible for confirming and securely storing recovery information before relying on the local wallet.
+Browser encryption and passkey protection reduce risk but do not make a compromised device safe. Malware, malicious extensions, operating-system compromise, phishing, synchronization-provider compromise, or physical access may expose or destroy wallet information.
 
-## 6. Quotes, routes, and third-party execution
+## 6. One-confirmation Gas Assist package authorization
 
-Quotes are estimates based on information available when requested. They may expire or change because of market movement, liquidity, slippage, price impact, gas prices, provider behavior, token taxes, rebasing, transfer restrictions, block timing, front-running, maximum extractable value, bridge conditions, or blockchain reorganization.
+For the current Pistachio Wallet prepaid Gas Assist flow, the backend may prepare an exact package containing three BNB Chain transactions: a fee-payment transfer, an exact token approval, and the swap transaction.
+
+When the one-confirmation package flow is available:
+
+- the package must contain the expected three actions, unique intent identifiers, future expirations, the authenticated wallet, and consecutive nonces;
+- Pistachio Wallet presents one package review and, for an already-unlocked session, requires one fresh passkey reauthentication for that package;
+- a resumed session that has just been passkey-unlocked is not intentionally prompted for a second passkey for the same package;
+- each transaction is still individually signed locally and validated against the exact backend-prepared transaction;
+- the frontend submits the package only after all required signatures have been produced and validated; and
+- rejecting or failing any part of the package prevents submission of a partial package through this flow.
+
+This single package confirmation authorizes only the exact reviewed package. It is not a blanket approval for future transactions, arbitrary tokens, arbitrary recipients, unlimited approvals, different networks, or unrelated Gas Assist orders.
+
+Gas Assist wallet authentication is separate from transaction authorization. A fresh authentication session may require a message signature proving control of the wallet. That authentication message states that it does not itself authorize a transaction.
+
+## 7. Quotes, routes, and execution
+
+Quotes are estimates based on information available when requested. They may expire or change because of market movement, liquidity, slippage, price impact, gas prices, provider behavior, token taxes, rebasing, transfer restrictions, block timing, maximum extractable value, bridge conditions, front-running, blockchain reorganization, or other conditions.
 
 A displayed route does not guarantee that:
 
-- The transaction will be accepted, mined, finalized, or profitable.
-- The expected or minimum output will be available after expiration.
-- A token is safe, legitimate, liquid, transferable, or redeemable.
-- A provider, smart contract, bridge, RPC endpoint, or blockchain will operate correctly.
-- A transaction can be reversed, refunded, or recovered.
+- a transaction will be accepted, mined, finalized, profitable, reversible, or recoverable;
+- the expected or minimum output will remain available after expiration;
+- a token is safe, legitimate, liquid, transferable, redeemable, or non-malicious;
+- a provider, smart contract, bridge, RPC endpoint, paymaster, or blockchain will operate correctly; or
+- a risk label, simulation, token list, or security check is complete or correct.
 
-You authorize only the transaction or signature request you approve in your wallet. You must reject any request that does not match your intent.
+Reject any wallet request that does not match your intent.
 
-## 7. Fees and costs
+## 8. Fees and costs
 
-The Service may charge platform, integrator, Gas Assist, fixed, percentage-based, progressive, or other disclosed fees. Third parties may separately charge liquidity-provider fees, bridge fees, protocol fees, token taxes, spreads, gas costs, relayer costs, or other charges.
+The Service may charge disclosed platform, integrator, Gas Assist, fixed, percentage-based, progressive, or other fees. Third parties may separately charge liquidity-provider fees, bridge fees, protocol fees, token taxes, spreads, gas costs, relayer costs, sponsorship costs, or other charges.
 
-Before signing, review the quote and transaction details shown by the Service and your wallet. Fees may vary by route, provider, asset, network, trade size, and current conditions. Unless expressly stated otherwise in the interface or required by law, fees are not refundable after a transaction is submitted or completed.
+Review the final quote/review information before authorization. Fees may vary by route, provider, asset, network, trade size, and current conditions. Unless expressly stated otherwise or required by law, fees are not refundable after an irreversible transaction has been submitted or completed.
 
-A configuration value, repository example, test fixture, or documentation sample is not a binding production price. The fee displayed in the final production quote controls for that transaction, subject to obvious error and applicable law.
+A repository example, environment value, test fixture, or documentation sample is not a binding production price. The transaction-specific disclosure presented by the production Service controls, subject to obvious error and applicable law.
 
-## 8. Gas Assist
+## 9. Gas Assist limitations
 
-Gas Assist is intended to help eligible users execute certain supported transactions when the connected wallet lacks native gas currency. Gas Assist may include network cost, sponsorship cost, conversion cost, and PistachioSwap fees in the quote or prepayment flow.
+Gas Assist is intended to help eligible users execute supported transactions when the wallet lacks native gas currency. It may include network cost, sponsorship cost, conversion cost, and PistachioSwap fees in the quote or prepayment flow.
 
 Gas Assist:
 
-- Is not free unless the interface expressly says so.
-- Is not available for every wallet, token, amount, route, or network.
-- May require wallet authentication, typed-data signatures, token approval, payment, rate-limit checks, transaction simulation, or other eligibility checks.
-- May be rejected because of token risk, liquidity, price impact, allowance, provider support, transaction simulation, abuse controls, limits, or changing network conditions.
-- May expire before signatures or transaction submission are completed.
-- Depends on a private backend and third-party infrastructure that may be paused, unavailable, or changed.
+- is not free unless the interface expressly says so;
+- is not available for every wallet, token, amount, route, or network;
+- may require wallet authentication, a passkey, message/transaction signatures, exact token approval, payment, simulation, liquidity/price/security checks, and rate-limit or abuse checks;
+- may be rejected because of token risk, liquidity, price impact, allowance, provider/paymaster support, policy restrictions, treasury limits, simulation, abuse controls, or network conditions;
+- may expire before signing or submission is complete; and
+- depends on a private backend and third-party infrastructure that may be paused, unavailable, or changed.
 
-PistachioSwap may pause, limit, refuse, or terminate Gas Assist to protect users, the treasury, providers, or the Service.
+PistachioSwap may pause, limit, refuse, or terminate Gas Assist when reasonably necessary to protect users, the treasury, providers, or the Service.
 
-## 9. Public blockchain records
+## 10. Public blockchain records
 
-Blockchain transactions are generally public and irreversible. Once broadcast, a transaction and its associated wallet addresses, token amounts, approvals, calldata, and transaction hash may be permanently visible and copied by third parties.
+Blockchain transactions are generally public and irreversible. Once broadcast, a transaction and its wallet addresses, token amounts, approvals, calldata, and transaction hash may be permanently visible and copied by third parties.
 
 PistachioSwap cannot delete, edit, hide, recall, or guarantee finality of public blockchain records.
 
-## 10. Token and smart-contract risks
+## 11. Digital-asset and smart-contract risks
 
-Digital assets and decentralized protocols involve substantial risk, including:
+Digital assets and decentralized protocols involve substantial risk, including total or partial loss of value; smart-contract bugs and exploits; malicious upgrades; governance/admin-key attacks; fake, honeypot, fee-on-transfer, rebasing, blacklistable, pausable, or non-transferable tokens; depegging; insolvency; liquidity loss; bridge or oracle failure; market manipulation; approval/signature phishing; malicious calldata; network congestion; chain reorganizations/forks; validator/RPC failures; legal/tax changes; and loss caused by user error or a compromised device.
 
-- Total or partial loss of value.
-- Smart-contract bugs, exploits, malicious upgrades, governance attacks, and admin-key risk.
-- Fake, impersonating, honeypot, fee-on-transfer, rebasing, blacklistable, pausable, or non-transferable tokens.
-- Liquidity loss, depegging, insolvency, bridge failure, oracle manipulation, and market manipulation.
-- Approval abuse, unlimited allowances, signature phishing, and malicious transaction calldata.
-- Network congestion, failed transactions, chain reorganizations, forks, validator failures, and RPC errors.
-- Legal, tax, regulatory, or sanctions changes.
+Risk labels, simulations, token lists, liquidity checks, and provider checks may be incomplete, delayed, incorrect, unavailable, or defeated by changing contract behavior. You must independently evaluate each asset and transaction.
 
-Risk labels, token lists, simulations, provider checks, and route validation may be incomplete, delayed, wrong, unavailable, or bypassed by a changing token contract. You must independently evaluate every asset and transaction.
+## 12. No investment, legal, tax, or fiduciary advice
 
-## 11. No investment, legal, or tax advice
+The Service provides software and transaction information. Nothing in the Service is investment, financial, trading, legal, tax, accounting, or fiduciary advice, and PistachioSwap does not recommend that you buy, sell, hold, bridge, stake, or use any asset.
 
-The Service provides software and transaction information. Nothing in the Service is investment, financial, trading, legal, tax, accounting, or fiduciary advice. PistachioSwap does not recommend that you buy, sell, hold, bridge, stake, or use any asset.
+You are responsible for your decisions and for professional advice appropriate to your circumstances.
 
-You are responsible for your own decisions and for obtaining professional advice appropriate to your circumstances.
+## 13. Taxes and reporting
 
-## 12. Taxes and reporting
+You are responsible for determining and satisfying taxes, reporting obligations, recordkeeping duties, sanctions/compliance obligations applicable to you, and other legal obligations arising from your transactions. PistachioSwap does not calculate or file taxes for you unless a separate written service expressly states otherwise.
 
-You are solely responsible for determining and satisfying taxes, reporting obligations, recordkeeping duties, and other legal obligations arising from your transactions. PistachioSwap does not calculate or file taxes for you unless a separate written service expressly says otherwise.
+## 14. Third-party services
 
-## 13. Third-party services
+The Service relies on or links to independent wallets, blockchains, RPC providers, indexers, token lists, market-data providers, swap aggregators, decentralized exchanges, bridges, relayers, sponsorship/paymaster providers, security services, hosting services, and software libraries.
 
-The Service relies on or links to independent wallets, blockchains, RPC providers, indexers, token lists, market-data providers, swap aggregators, decentralized exchanges, bridges, relayers, sponsorship providers, security services, and other software.
+Third-party services are not controlled by PistachioSwap. Their terms, privacy policies, fees, licenses, availability, security, and conduct apply separately. Integration does not imply endorsement, partnership, guarantee, or sponsorship unless expressly stated.
 
-Third-party services are not controlled by PistachioSwap. Their terms, privacy policies, fees, availability, security, and conduct apply separately. PistachioSwap is not responsible for third-party acts, omissions, downtime, data, contracts, tokens, or losses.
+Names and logos of third parties remain the property of their respective owners.
 
-Names and logos of third parties belong to their respective owners. Integration does not imply endorsement, partnership, guarantee, or sponsorship.
-
-## 14. Acceptable use
+## 15. Acceptable use
 
 You may not use the Service to:
 
-- Violate law, sanctions, court orders, or another person's rights.
-- Launder money, finance unlawful activity, evade lawful restrictions, commit fraud, or conceal criminal proceeds.
-- Exploit, attack, overload, disrupt, probe, or bypass security, service boundaries, or rate limits.
-- Submit malicious transactions, signatures, payloads, tokens, links, code, or data.
-- Impersonate another person or misrepresent authorization, affiliation, location, or identity.
-- Manipulate quotes, sponsorship eligibility, fees, abuse controls, referrals, or provider systems.
-- Scrape, copy, reverse engineer, or resell the Service in violation of the applicable software license or a third party's terms.
-- Use the Service in a way that exposes PistachioSwap or another person to legal, security, financial, or operational harm.
+- violate law, sanctions, court orders, or another person's rights;
+- launder money, finance unlawful activity, evade lawful restrictions, commit fraud, or conceal criminal proceeds;
+- exploit, attack, overload, disrupt, probe, or bypass security controls, service boundaries, authorization, rate limits, or sponsorship restrictions;
+- submit malicious transactions, signatures, payloads, tokens, links, code, or data;
+- impersonate another person or misrepresent authority, affiliation, location, or identity;
+- manipulate quotes, sponsorship eligibility, fees, abuse controls, referral systems, or provider systems; or
+- scrape, copy, reverse engineer, redistribute, host, or resell software in violation of the applicable license or third-party terms.
 
 We may investigate suspected abuse and cooperate with lawful requests.
 
-## 15. Intellectual property and software license
+## 16. Intellectual property and source license
 
-PistachioSwap's owner-controlled source code is source-available under the PolyForm Noncommercial License 1.0.0 unless a file states otherwise. Commercial use requires a separate written license from the project owner.
+Owner-controlled PistachioSwap source code is source-available under the PolyForm Noncommercial License 1.0.0 unless a file states otherwise. Commercial use of owner-controlled code requires a separate written license from the project owner.
 
-Third-party packages, components, fonts, data, token lists, SDKs, and copied or generated materials remain subject to their own licenses and notices. You must comply with all applicable third-party terms.
+Third-party packages, components, fonts, SDKs, data, token lists, and copied/generated materials remain subject to their own licenses and notices. The project owner's license does not override those rights or obligations.
 
-These Terms govern use of the hosted Service. They do not expand the source-code license, grant commercial hosting rights, or transfer ownership of PistachioSwap names, logos, domains, designs, or other intellectual property.
+These Terms govern use of the hosted Service. They do not expand the source-code license or transfer ownership of names, logos, domains, designs, or other intellectual property.
 
-## 16. Feedback and contributions
+## 17. Feedback and contributions
 
-If you submit feedback, suggestions, issues, or other non-confidential ideas, you grant PistachioSwap a worldwide, perpetual, irrevocable, royalty-free right to use, modify, reproduce, publish, and incorporate that feedback without compensation or attribution.
+If you submit non-confidential feedback or suggestions, you grant PistachioSwap a worldwide, perpetual, irrevocable, royalty-free right to use, modify, reproduce, publish, and incorporate that feedback without compensation or attribution, to the extent permitted by law.
 
-Code contributions remain governed by the repository license and any contribution terms presented when you submit them. Do not contribute code or content you do not have the right to provide.
+Code contributions are governed by the repository license, `CONTRIBUTING.md`, the Contributor Assignment Agreement where accepted, and any separate written agreement. Do not contribute code or content you do not have the right to provide.
 
-## 17. Privacy
+## 18. Privacy
 
-The [Privacy Policy](PRIVACY.md) explains how information is processed through the Service. By using the Service, you acknowledge those practices.
+The [Privacy Policy](PRIVACY.md) explains current repository-aligned data practices and the information that must still be finalized before launch.
 
-Do not submit sensitive wallet secrets through support channels, analytics, issue trackers, or pull requests.
+Do not submit wallet secrets through support channels, analytics, issue trackers, pull requests, or other public channels.
 
-## 18. Availability, changes, and termination
+## 19. Availability, changes, suspension, and termination
 
 We may modify, suspend, restrict, or discontinue any part of the Service at any time. We may block or limit access when reasonably necessary for security, maintenance, legal compliance, provider requirements, suspected abuse, or treasury protection.
 
 You may stop using the Service at any time. Stopping use does not reverse blockchain transactions, cancel third-party obligations, or remove public records.
 
-Provisions that by their nature should survive termination will survive, including ownership, risk allocation, disclaimers, limitations of liability, indemnity, and dispute terms.
+Provisions that by their nature should survive termination survive, including ownership, risk allocation, disclaimers, limitations of liability, indemnity, and dispute provisions.
 
-## 19. Disclaimers
+## 20. Disclaimers
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, SECURITY, ACCURACY, AVAILABILITY, OR QUIET ENJOYMENT.
 
@@ -193,47 +196,47 @@ PISTACHIOSWAP DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FRE
 
 Nothing in these Terms excludes a warranty or right that cannot lawfully be excluded.
 
-## 20. Limitation of liability
+## 21. Limitation of liability
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW, PISTACHIOSWAP AND ITS OWNER, FUTURE OPERATING ENTITY, CONTRIBUTORS, CONTRACTORS, AND SERVICE PROVIDERS WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE DAMAGES; LOST PROFITS, REVENUE, DATA, GOODWILL, KEYS, TOKENS, OR OPPORTUNITIES; OR LOSSES ARISING FROM MARKET MOVEMENT, SMART CONTRACTS, TOKENS, BRIDGES, WALLETS, PROVIDERS, BLOCKCHAINS, SECURITY INCIDENTS, USER ERROR, OR UNAUTHORIZED ACCESS.
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW, TOTAL LIABILITY ARISING OUT OF OR RELATING TO THE SERVICE WILL NOT EXCEED THE GREATER OF: (A) THE FEES YOU PAID DIRECTLY TO PISTACHIOSWAP FOR THE SPECIFIC TRANSACTION GIVING RISE TO THE CLAIM; OR (B) US $100.
 
-Some jurisdictions do not allow certain exclusions or limits, so portions of this section may not apply to you.
+Some jurisdictions do not allow certain exclusions or limits. Mandatory rights remain unaffected.
 
-## 21. Indemnification
+## 22. Indemnification
 
 To the maximum extent permitted by law, you agree to defend, indemnify, and hold harmless PistachioSwap, its owner, future operating entity, contributors, contractors, and service providers from claims, damages, obligations, losses, liabilities, costs, and expenses arising from your unlawful use of the Service, violation of these Terms, violation of another person's rights, or transactions you authorize.
 
 This section does not require indemnification for conduct that cannot lawfully be indemnified.
 
-## 22. Governing law and venue
+## 23. Governing law and dispute venue
 
-These Terms are governed by the laws of the State of California, without regard to conflict-of-laws principles, except where another jurisdiction's mandatory consumer law applies.
+Unless mandatory law requires otherwise, these Terms are intended to be governed by California law, without regard to conflict-of-laws principles.
 
-Unless applicable law requires otherwise, disputes arising from these Terms or the Service will be brought in the state or federal courts located in Los Angeles County, California, and each party consents to their jurisdiction and venue.
+**The final venue, arbitration/class-action provisions (if any), and exact contracting entity are intentionally not finalized in this pre-launch draft.** Those provisions materially depend on the eventual operator's legal formation, address, consumer-law obligations, and launch jurisdictions. Before commercial launch, qualified counsel must replace this paragraph with enforceable production dispute terms and any required notices.
 
-Before launch, qualified counsel should confirm whether arbitration, class-action, consumer-notice, or alternative venue provisions are appropriate. None are imposed by this pre-launch draft.
+Nothing in this draft waives a mandatory consumer right or statutory forum that cannot lawfully be waived.
 
-## 23. Changes to these Terms
+## 24. Changes to these Terms
 
-We may update these Terms as the Service, fees, operating entity, providers, law, or risk profile changes. We will post the revised Terms and update the "Last updated" date. Additional notice will be provided when required by law.
+We may update these Terms as the Service, operator, fees, providers, law, or risk profile changes. We will post the revised Terms and update the "Last updated" date. Additional notice will be provided where required by law.
 
-Continued use after revised Terms become effective constitutes acceptance to the extent permitted by law. If you do not agree to revised Terms, stop using the Service.
+Continued use after revised Terms become effective constitutes acceptance only to the extent permitted by applicable law. If you do not agree to revised Terms, stop using the Service.
 
-## 24. General terms
+## 25. General terms
 
-If any provision is found unenforceable, it will be enforced to the maximum lawful extent and the remaining provisions will remain effective. A failure to enforce a provision is not a waiver. You may not assign these Terms without written consent; PistachioSwap may assign them as part of company formation, financing, reorganization, or transfer of the Service.
+If any provision is found unenforceable, it will be enforced to the maximum lawful extent and the remaining provisions will remain effective. Failure to enforce a provision is not a waiver. You may not assign these Terms without written consent; PistachioSwap may assign them as part of company formation, financing, reorganization, or transfer of the Service, subject to applicable law.
 
-These Terms, the Privacy Policy, the applicable software license, and any transaction-specific disclosures form the agreement concerning the Service, subject to any separate written agreement.
+These Terms, the Privacy Policy, the applicable software license, transaction-specific disclosures, and any separate written agreement form the relevant agreement concerning the Service.
 
-## 25. Contact
+## 26. Contact
 
 Legal questions: **legal@pistachioswap.com**  
 Privacy questions: **privacy@pistachioswap.com**
 
-Before commercial launch, the operator must ensure these addresses exist and are monitored, and must add the final legal entity's exact name and any required mailing address.
+Before commercial launch, the operator must confirm that these addresses exist and are monitored, identify the final legal entity, and add any legally required mailing address, registered-agent, representative, or regulatory contact information.
 
 ---
 
-This pre-launch draft identifies the main contractual risks reflected in the repository and current split-service architecture. It is not a substitute for a lawyer's review of the final product, company, licenses, money-transmission analysis, sanctions controls, consumer disclosures, and launch jurisdictions.
+This pre-launch draft reflects major product and risk characteristics visible in the repository. It is not a substitute for qualified counsel reviewing the final operator, launch jurisdictions, money-transmission and sanctions analysis, consumer disclosures, privacy program, fees, and production infrastructure.

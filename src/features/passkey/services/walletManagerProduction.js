@@ -138,6 +138,7 @@ export function hardenPistachioWalletManager(manager) {
             'removePasskey',
             'revealPrivateKey',
             'revealRecoveryPhrase',
+            'signMegaFuelPackage',
         ].flatMap((name) => typeof manager[name] === 'function'
             ? [[name, manager[name].bind(manager)]]
             : []),

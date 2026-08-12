@@ -1,221 +1,202 @@
 # PistachioSwap Privacy Policy
 
 **Effective date:** July 28, 2026  
-**Last updated:** July 28, 2026
+**Last updated:** August 11, 2026
 
 > [!IMPORTANT]
-> **Pre-launch legal notice:** PistachioSwap is currently a project name and the operating company has not yet been identified in this repository. Before commercial launch, replace this notice with the exact legal entity name, a monitored privacy contact, and any required mailing address. Qualified counsel should review this policy against the final product, vendors, data flows, retention schedules, and launch jurisdictions.
+> **Pre-launch status.** The repository does not yet identify the final legal entity that will operate PistachioSwap. Before commercial launch, this Policy must be updated with that entity's exact legal name, required address/contact details, actual production vendors, final retention/deletion schedules, supported jurisdictions, and any jurisdiction-specific disclosures. A qualified privacy lawyer should review the production deployment. This document describes the current software and intended data flows; it is not a certification of legal compliance.
 
-This Privacy Policy explains how the operator of PistachioSwap ("PistachioSwap," "we," "us," or "our") collects, uses, discloses, and protects information when you use the PistachioSwap website, wallet interface, public API, separately deployed Gas Assist service, and related services (collectively, the "Service").
+This Privacy Policy explains how the operator of PistachioSwap ("PistachioSwap," "we," "us," or "our") may collect, use, disclose, and protect information when you use the PistachioSwap website, wallet interface, public API, separately deployed Gas Assist service, and related services (collectively, the "Service").
 
-## 1. Scope
+## 1. Scope and public-blockchain warning
 
-This Policy applies to information processed through the Service. It does not control independent wallets, blockchains, token issuers, decentralized exchanges, bridges, RPC providers, indexers, or other third-party services. Those parties process information under their own terms and privacy policies.
+This Policy covers information processed through the Service. Independent wallets, blockchains, token issuers, decentralized exchanges, bridges, RPC providers, indexers, passkey/platform providers, and other third parties have their own practices and policies.
 
-PistachioSwap is a self-custodial interface. Public blockchain activity is not private. Wallet addresses, token balances, approvals, transfers, swaps, transaction calldata, and transaction hashes may be permanently visible through blockchain nodes, explorers, analytics services, and public records.
+PistachioSwap is designed as a self-custodial interface. Public blockchain activity is not private. Wallet addresses, token balances, approvals, transfers, swaps, calldata, transaction hashes, and related records may be permanently visible to validators, RPC nodes, explorers, analytics services, counterparties, and the public. PistachioSwap generally cannot delete or alter public blockchain records.
 
-The public PistachioSwap API exposes bounded Gas Assist and sponsorship proxy routes. Gas Assist execution, settlement, recovery, replay protection, abuse controls, and administrative operations are handled by a separately deployed private service that is not contained in the public repository.
-
-## 2. Information we collect
-
-The information processed depends on the features you use and how the Service is deployed.
+## 2. Information the Service may process
 
 ### A. Wallet and blockchain information
 
-We may process:
+Depending on the feature used, the Service may process:
 
-- Public wallet addresses and chain identifiers.
-- Public token balances, allowances, transaction history, and portfolio values.
-- Token contract addresses, token metadata, selected assets, and network selections.
-- Public transaction hashes, transaction status, block information, and related on-chain records.
-- Wallet connection and session information supplied by your wallet or connection provider.
+- public wallet addresses and chain identifiers;
+- token balances, allowances, transactions, activity, and portfolio values;
+- token contract addresses, symbols, decimals, metadata, and selected networks;
+- public transaction hashes, block information, receipts, and execution status; and
+- wallet connection/session information supplied by the wallet or connection provider.
 
-Wallet addresses and transaction history may be personal information when they can reasonably be linked to a person or household.
+A public wallet address or transaction history can still be personal information when it can reasonably be linked to an individual or household.
 
-### B. Swap, quote, and Gas Assist information
+### B. Quotes, swaps, and Gas Assist
 
-When you request a quote, build a swap, or use Gas Assist, the public API, private Gas Assist service, or configured providers may process and retain:
+When you request or execute a quote, bridge, swap, or Gas Assist transaction, the Service and configured providers may process:
 
-- Sell and buy token addresses, amounts, decimals, selected chain, recipient, and taker address.
-- Quote identifiers, route information, provider responses, expected and minimum output, slippage, price impact, fees, gas estimates, and expiration times.
-- Approval targets, approval amounts, typed-data payloads, signature hashes, transaction calldata, signed raw transactions, and submission attempts when required for an authorized sponsored flow.
-- Payment, approval, swap, and settlement transaction hashes.
-- Order status, provider status, rejection or failure codes, recovery events, timestamps, and idempotency keys.
-- Gas sponsorship usage, limits, fraud-prevention records, and abuse indicators.
+- sell and buy tokens, amounts, chain, recipient, taker/wallet address, and slippage;
+- quote IDs, routes, expected/minimum output, price impact, fees, gas estimates, expiration times, and provider responses;
+- approval targets and exact approval amounts;
+- transaction calldata and unsigned transaction fields prepared for your review;
+- wallet-authentication challenges and signatures used to prove control of a wallet;
+- signed raw transactions when required for an explicitly authorized Gas Assist flow;
+- payment, approval, swap, bridge, and settlement transaction hashes;
+- order/intent status, failure codes, recovery state, timestamps, idempotency values, and replay-prevention records; and
+- sponsorship limits, abuse indicators, and security events.
 
-PistachioSwap does not need your private key to route a swap. Never send a private key, seed phrase, passkey secret, recovery phrase, or internal service token to PistachioSwap support.
+For the current Pistachio Wallet Gas Assist package flow, the fee-payment transfer, token approval, and swap are prepared as an exact package. The wallet performs a single package review/passkey authorization for an already-unlocked session, locally signs the three exact transactions, validates the signed transactions, and returns the complete package. The private key is not sent to the public API or Gas Assist backend.
 
 ### C. Pistachio Wallet information stored on your device
 
-If the optional Pistachio Wallet feature is enabled, the application may store the following in your browser's IndexedDB storage:
+If the optional Pistachio Wallet is enabled, browser storage may contain:
 
-- Encrypted wallet vault records and ciphertext.
-- Public wallet addresses and vault identifiers.
-- Wallet labels, selected-vault preferences, activity timestamps, and session-resume preferences.
-- Passkey credential metadata and information needed to request a passkey operation.
-- Recovery-backup confirmation state and local wallet settings.
+- encrypted vault records and ciphertext;
+- public wallet addresses and vault identifiers;
+- wallet labels and selected-vault preferences;
+- passkey credential identifiers/metadata and values needed to request WebAuthn operations;
+- recovery-backup confirmation state and local settings; and
+- local session/activity metadata used to decide whether a wallet can be resumed or must be reauthenticated.
 
-The wallet is designed so that unlocked secret material remains inside a dedicated browser worker and is cleared when the wallet locks, times out, changes accounts, or is disposed. The encrypted local vault remains on the device until you delete it, clear site data, or remove the browser profile.
+Unlocked secret material is designed to remain in a dedicated browser worker-owned session and to be cleared when the wallet locks, times out, changes account, or is disposed. The encrypted vault remains in browser storage until you delete it, clear site data, or remove the browser profile.
 
-Your browser, operating system, device manufacturer, password manager, passkey provider, or cloud-synchronization provider may separately process passkey or device information under its own policy.
+PistachioSwap does not receive your fingerprint, face scan, or other biometric template from WebAuthn. A device, operating system, authenticator, password manager, or passkey synchronization provider may independently process biometric or device information under its own terms.
 
 ### D. Network, device, and security information
 
-Our servers and service providers may automatically receive:
+Servers and infrastructure providers may receive or process:
 
-- Internet Protocol address. Gas Assist abuse controls may store a keyed hash of an IP address instead of the raw address.
-- Request timestamps, route and endpoint information, HTTP headers, user agent, browser type, device type, operating system, and referring page.
-- Rate-limit events, security events, error reports, diagnostic information, and suspected abuse indicators.
-- Approximate location inferred from an IP address when supplied by infrastructure or security providers.
+- IP address and network information;
+- request time, endpoint, method, selected headers, user-agent/browser/device information, and referring information when supplied;
+- rate-limit, authentication, security, abuse-prevention, and error events;
+- approximate location inferred by infrastructure or security providers from an IP address; and
+- diagnostic information needed to operate or secure the Service.
 
-Development diagnostics are intended to redact authorization headers, internal service tokens, session tokens, signatures, private keys, and signed raw transactions. Production operators must verify logging and redaction configuration before launch.
+Gas Assist contains configurable IP-based abuse limits and secret-backed privacy controls. Production operators must verify the exact storage representation, retention, and deletion schedule used by the deployed service before launch rather than relying on a repository example.
+
+Application logging is configured to redact sensitive fields including authorization credentials, internal service tokens, raw signed transactions, signatures, private keys, recovery phrases, passwords, and similar wallet-secret material. Operators must still review production logging and provider logging because no redaction configuration is infallible.
 
 ### E. Communications
 
-If you contact us, we may collect your email address, name or alias, wallet address if you provide it, message contents, attachments, and the history of our response.
+If you contact us, we may process the address or account you contact us from, your name or alias, message contents, attachments, wallet address if you voluntarily provide it, and our response history.
 
-Do not include secret wallet material, API credentials, internal service tokens, or sensitive vulnerability details in support messages or public GitHub issues.
+Do not send private keys, seed/recovery phrases, passkey secrets, raw signed transactions, API credentials, or internal service tokens in support messages or public GitHub issues.
 
 ## 3. Sources of information
 
-We obtain information from:
+Information may come from:
 
-- You and the actions you take in the Service.
-- Your connected wallet, browser, and device.
-- Public blockchains, RPC endpoints, indexers, explorers, and token registries.
-- Swap, bridge, liquidity, market-data, token-security, and wallet-connection providers.
-- Our public API, private Gas Assist service, databases, logs, rate-limit systems, and fraud-prevention controls.
+- you and your browser/device;
+- your connected wallet or optional local Pistachio Wallet;
+- public blockchains, RPC nodes, indexers, explorers, and token registries;
+- configured swap, bridge, liquidity, sponsorship, market-data, token-security, and wallet-connection providers; and
+- PistachioSwap's public API, private Gas Assist service, databases, logs, caches, and security systems.
 
-## 4. How we use information
+## 4. Why information is used
 
 We may use information to:
 
-- Connect a wallet and display balances, assets, activity, prices, and token information.
-- Request, compare, validate, build, submit, recover, and monitor swaps and sponsored transactions.
-- Calculate and disclose fees, gas costs, expected output, minimum output, and price impact.
-- Authenticate wallet ownership through signed messages or typed data.
-- Prevent replay, duplicate submissions, fraud, abuse, rate-limit evasion, and unauthorized sponsorship.
-- Detect unsafe, unknown, hidden, or unsupported tokens and present risk information.
-- Maintain local wallet security, encrypted storage, session state, signing review, and account recovery features.
-- Operate, debug, secure, test, analyze, and improve the Service.
-- Provide support and respond to privacy, legal, or security requests.
-- Comply with law, enforce agreements, protect users and the Service, and establish or defend legal claims.
+- connect wallets and show balances, tokens, prices, and activity;
+- request, compare, validate, prepare, sign, submit, recover, and monitor transactions you request;
+- calculate and disclose expected output, minimum output, gas, price impact, and fees;
+- authenticate wallet control and prevent replay or duplicate submissions;
+- apply sponsorship eligibility, rate limits, fraud/abuse prevention, and treasury protections;
+- identify unsupported, risky, unknown, hidden, or suspicious tokens;
+- protect encrypted local-wallet state and enforce signing/account/chain invariants;
+- operate, troubleshoot, test, secure, and improve the Service;
+- provide support and respond to security, privacy, legal, or regulatory requests; and
+- comply with applicable law and establish, exercise, or defend legal claims.
 
-## 5. How we disclose information
+## 5. Legal bases for EEA/UK processing
 
-We may disclose information to the following categories of recipients when necessary to provide the Service.
+If European or UK data-protection law applies to a particular processing activity, the eventual operator must identify and document an appropriate legal basis for that activity before launch. Depending on the final operation, relevant bases may include performance of a contract or steps requested by a user, legitimate interests such as fraud prevention/network security after the required balancing assessment, compliance with legal obligations, or consent where consent is actually requested and legally appropriate.
 
-### Service and infrastructure providers
+Because the final controller/entity and production processing inventory are not yet identified in this repository, this pre-launch Policy does **not** claim that every possible EEA/UK processing activity already has a finalized legal-basis analysis. That analysis, controller identity, international-transfer mechanism, and any required representative/DPO information must be completed before offering the production Service where those rules apply.
 
-Depending on configuration, this may include hosting providers, databases, RPC providers, wallet indexers, and services such as Alchemy, Moralis, or self-hosted Pchained infrastructure.
+## 6. How information may be disclosed
 
-### Wallet connection and software providers
+Information may be disclosed as necessary to operate the Service to categories such as:
 
-This may include Reown AppKit, WalletConnect, MetaMask connection components, and the wallet application you choose to connect.
+- hosting, database, CDN, security, RPC, and indexing providers;
+- wallet-connection and wallet-software providers such as Reown/WalletConnect or the wallet you choose;
+- swap, liquidity, sponsorship, and bridge providers such as configured Uniswap, 0x, PancakeSwap, MegaFuel/NodeReal, Across, deBridge, Relay, Chainflip, or similar services;
+- market-data and token-security providers such as configured CoinGecko, GeckoTerminal, DexScreener, DexPaprika, Moralis, Alchemy, Honeypot.is, GoPlus, ShapeShift asset data, token lists, or self-hosted Pchained infrastructure;
+- accountants, auditors, insurers, attorneys, regulators, courts, or law enforcement when reasonably necessary and lawful; and
+- an acquirer, successor, or newly formed operating entity in a financing, merger, reorganization, sale, insolvency, or similar business transfer.
 
-### Swap, liquidity, sponsorship, and bridge providers
+The exact provider list depends on production configuration. A provider named in repository documentation may be disabled in a particular deployment.
 
-This may include 0x, Uniswap, PancakeSwap, MegaFuel or NodeReal services, Across, deBridge, Relay, Chainflip, and other configured routing or execution providers.
+When a blockchain transaction is broadcast, transaction data is disclosed to the network and may become permanently public.
 
-### Market-data, token, and security providers
+## 7. Sale, sharing, advertising, and preference signals
 
-This may include DexScreener, GeckoTerminal, DexPaprika, CoinGecko, ShapeShift asset data, Honeypot.is, GoPlus, public token lists, and blockchain data services.
+The current repository does not intentionally implement behavioral-advertising trackers or a business model that sells personal information or shares it for cross-context behavioral advertising. If the production operator begins a practice treated as a sale or sharing under applicable law, the Policy and required opt-out controls must be updated before that practice begins.
 
-### Professional and legal recipients
+Where California law requires a covered business to honor a valid Global Privacy Control or similar legally recognized opt-out preference signal, the production Service must do so for applicable sale/sharing activity. The present absence of such sale/sharing activity should not be treated as a promise that the business model can never change; material changes require updated notice and controls.
 
-We may disclose information to accountants, auditors, insurers, attorneys, regulators, law enforcement, courts, or other parties when reasonably necessary for compliance, safety, investigation, or legal claims.
+## 8. Browser storage and tracking choices
 
-### Business transfers
+The Service may use IndexedDB, local storage, session storage, caches, and wallet/connection-provider storage for encrypted wallet vaults, preferences, selected tokens, recent activity, connection state, and security/session information.
 
-Information may be transferred as part of a financing, acquisition, merger, reorganization, asset sale, insolvency, or transition to a newly formed operating company, subject to applicable law.
+Clearing site/browser data can permanently remove local wallet data. Maintain a valid recovery backup before clearing storage. PistachioSwap cannot recover local wallet secrets that were never safely backed up.
 
-### Public blockchains
+Third-party wallets and providers may use their own storage or tracking technologies under their own policies.
 
-When a transaction is broadcast, its public details are disclosed to blockchain validators, RPC nodes, explorers, analytics services, and the public. Blockchain records generally cannot be deleted or changed by PistachioSwap.
+## 9. Retention
 
-## 6. Sale, sharing, and advertising
+Information should be retained only as long as reasonably necessary for transaction execution/recovery, security, abuse prevention, support, accounting/tax, disputes, and legal obligations.
 
-As currently designed, PistachioSwap does **not** sell personal information and does **not** share personal information for cross-context behavioral advertising as those terms are defined by applicable California privacy law.
+Current categories include:
 
-The repository does not currently include advertising analytics or behavioral-advertising trackers. If the production Service later introduces advertising, cross-site tracking, or a practice treated as a sale or sharing of personal information, this Policy and the Service's privacy controls must be updated before that practice begins.
+- **Local encrypted wallet data:** remains on the device until the vault/site data/browser profile is deleted.
+- **Authentication challenges and sessions:** have configured expirations; security records may survive expiration when necessary for replay prevention, fraud investigation, or legal records.
+- **Quotes, orders, and signing intents:** expire on configured schedules, while transaction/recovery records may be kept longer where operationally or legally necessary.
+- **Transaction and fee records:** may be retained for accounting, tax, reconciliation, dispute, and legal needs.
+- **Security/abuse records:** may be kept while a threat, limit, investigation, or legal need remains active.
+- **Support communications:** may be kept while necessary to resolve and document the request.
+- **Backups:** may retain data for a limited additional period before rotation or deletion.
 
-## 7. Cookies, browser storage, and tracking choices
+Before production launch, the operator must adopt specific documented retention and deletion schedules for API logs, Gas Assist database records, authentication data, abuse/security records, backups, and support systems. De-identified or aggregated information may be kept where it can no longer reasonably identify a person.
 
-PistachioSwap may use browser storage necessary for the Service, including IndexedDB, local storage, session storage, caches, and connection-provider storage. These technologies may remember encrypted wallet vaults, settings, selected tokens, recent activity, connection state, and security preferences.
+## 10. Security
 
-Clearing browser or site data may delete local wallet information. Back up recovery information before clearing storage. PistachioSwap cannot restore local wallet secrets that you did not safely back up.
+The Service implements safeguards intended to reduce risk, including encrypted local vault storage, passkey-based protection, dedicated worker-held unlocked secrets, explicit transaction/package review, exact transaction validation, server-side authentication, private service tokens, explicit public proxy route allowlisting, restricted administrative routes, request validation, rate limits, expiry, idempotency/replay controls, provider restrictions, and sensitive-log redaction.
 
-### Do Not Track and Global Privacy Control
+No wallet, browser, passkey implementation, smart contract, provider, server, database, blockchain, or transmission method is completely secure. You are responsible for securing your device, browser profile, passkeys, external wallets, backups, and recovery information.
 
-Some browsers send a legacy "Do Not Track" signal. There is no universally accepted technical standard for responding to that signal, and the current Service does not change essential processing solely because it receives one.
+## 11. Your choices and privacy rights
 
-Because PistachioSwap does not currently sell or share personal information for behavioral advertising, there is no separate sale or sharing to opt out of. If that changes, PistachioSwap will implement legally required opt-out mechanisms and recognize valid preference signals where required.
+Depending on applicable law, you may have rights to know/access, correct, delete, restrict, object to certain processing, receive a portable copy, withdraw consent where consent is the basis, or obtain information about disclosures. You may also have a right to complain to an applicable data-protection authority.
 
-Third-party wallet, infrastructure, and routing providers may collect information across services under their own policies. PistachioSwap does not control their independent tracking practices.
+You may disconnect an external wallet, delete a local Pistachio Wallet vault when the feature is available, clear browser storage after securing recovery information, decline an optional support disclosure, or reject a signing request before submission.
 
-## 8. Data retention
+Public blockchain records generally cannot be deleted or corrected by PistachioSwap. Requests may also be limited where an exception applies, including inability to verify the requester, fraud/security needs, legal obligations, or establishment/defense of legal claims.
 
-We retain information only for as long as reasonably necessary for the purposes described in this Policy, including transaction execution and recovery, security, fraud prevention, support, accounting, tax, dispute resolution, and legal compliance.
+## 12. California privacy rights
 
-Retention depends on the type of information:
+If the California Consumer Privacy Act and related regulations apply to the production operator, California residents may have rights including rights to know/access, delete, correct, opt out of sale/sharing, limit certain uses of sensitive personal information where applicable, and exercise rights without unlawful discrimination.
 
-- **Local wallet data** remains in your browser until you delete the vault, clear site data, or remove the browser profile.
-- **Quotes, challenges, and sessions** have configured expiration periods, but associated security or transaction records may be retained after expiration when needed to prevent replay, investigate abuse, recover a transaction, or document a completed service.
-- **Transaction and fee records** may be retained for the period required for accounting, tax, compliance, disputes, and legal claims.
-- **Security and abuse records** may be retained while a threat, restriction, investigation, or legal need remains active.
-- **Support communications** may be retained while needed to resolve the request and maintain an appropriate record.
-- **Backups** may retain information for a limited additional period before deletion or overwrite.
+Before launch, the operator must determine whether statutory thresholds apply and establish required intake, verification, response, and preference-signal processes. Privacy requests may be sent to **privacy@pistachioswap.com** only after the operator confirms that address is active and monitored. We will never require a seed phrase or private key to verify a privacy request.
 
-Before production launch, the operator must document and implement deletion schedules for public API logs, private Gas Assist records, expired authentication records, backups, and support systems. We may retain de-identified or aggregated information when it can no longer reasonably identify you.
+## 13. EEA/UK rights and international transfers
 
-## 9. Security
+Where GDPR/UK GDPR applies, individuals may have rights including access, rectification, erasure, restriction, portability, objection, and rights related to certain automated decisions, as well as the right to lodge a complaint with a competent supervisory authority.
 
-We use administrative, technical, and organizational safeguards intended to protect information, including encrypted local vault storage, explicit signing review, backend-only credentials, an authenticated server-to-server Gas Assist boundary, restricted private administrative routes, rate limits, signature verification, expiry checks, idempotency, replay protection, provider validation, and restricted CORS configuration.
+PistachioSwap and its providers may process information in the United States and other countries. Before production use involving regulated international transfers, the operator must identify the controller/processor roles and implement any legally required transfer mechanism or safeguard.
 
-No wallet, browser, smart contract, network, database, service boundary, or transmission method is completely secure. You are responsible for securing your device, browser profile, passkeys, connected wallets, recovery information, and accounts.
+## 14. Age eligibility
 
-## 10. Your choices and rights
+The Terms currently require users to be at least 18 years old. The Service is not directed to children. We do not knowingly seek personal information from children under 13, and the production operator must address any legally required process if it learns that such information was collected.
 
-Depending on where you live and which privacy laws apply, you may have rights to request access to, correction of, or deletion of personal information; obtain information about collection and disclosure; object to or restrict certain processing; or receive a portable copy.
+The current Service does not intentionally sell or share minors' personal information for behavioral advertising. If the business model changes, applicable age-specific requirements must be implemented before that activity begins.
 
-You may also:
+## 15. Changes to this Policy
 
-- Disconnect your external wallet.
-- Delete a local Pistachio Wallet vault through the application when that feature is available.
-- Clear browser storage, understanding that doing so may permanently remove local wallet data.
-- Avoid providing optional support information.
-- Decline a signature or transaction before submission.
+We may update this Policy when the Service, operator, vendors, law, data flows, or security practices change. The revised document will show an updated date, and additional notice will be provided when legally required or appropriate for a material change.
 
-Blockchain data cannot generally be deleted or corrected by PistachioSwap. We may also deny or limit a request when an exception applies, including security, fraud prevention, legal obligations, or inability to verify the requester.
-
-## 11. California privacy rights
-
-California residents may have statutory privacy rights when the relevant law applies, including rights to know, access, delete, and correct personal information; opt out of certain sale or sharing; limit certain uses of sensitive personal information; and receive equal service when exercising privacy rights.
-
-Before launch, counsel must determine which California privacy statutes and thresholds apply to the final operator and Service. Regardless of mandatory coverage, we intend to consider verified access, correction, and deletion requests where technically and legally feasible.
-
-Submit a request to **privacy@pistachioswap.com**. Before launch, the operator must ensure this address exists, is monitored, and has a documented identity-verification and response process. We will not request a seed phrase or private key to verify a privacy request.
-
-## 12. Children and minors
-
-The Service is not directed to children under 13, and we do not knowingly collect personal information from children under 13. The production Service may impose a higher minimum age or require users to have legal capacity to enter a contract, depending on applicable law and the final Terms of Use.
-
-We do not knowingly sell or share the personal information of consumers under 16 for behavioral advertising.
-
-## 13. International users
-
-PistachioSwap and its providers may process information in the United States and other countries. Those countries may have privacy laws different from the laws where you live. Where required, the operator must implement appropriate transfer safeguards before launch in the relevant jurisdiction.
-
-## 14. Changes to this Policy
-
-We may update this Policy to reflect changes in the Service, vendors, law, security practices, or the operating company. We will post the revised Policy, update the "Last updated" date, and provide additional notice when legally required or when a change is material.
-
-## 15. Contact
+## 16. Contact
 
 Privacy questions and requests: **privacy@pistachioswap.com**
 
-Before commercial launch, this section must be updated with the final operating entity's exact legal name and any additional contact information required by applicable law.
+Before commercial launch, the final section must identify the operating legal entity, confirm that the contact channel is monitored, and add any legally required mailing address, representative, or data-protection contact.
 
 ---
 
-This pre-launch draft maps the repository's current architecture and intended data flows into a readable privacy notice. It is not a substitute for advice from qualified counsel reviewing the final business and production deployment.
+This is a repository-aligned pre-launch privacy notice, not a substitute for advice from qualified counsel reviewing the actual operator, production infrastructure, vendors, retention schedules, jurisdictions, and business practices.

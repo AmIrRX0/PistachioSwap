@@ -1,3 +1,5 @@
+import './SwapAmountInput.css'
+
 /**
  * Renders a token- or USD-denominated amount field.
  * @param {{value: string, denomination: string, label: string, invalid?: boolean, className: string, onChange: (event: object) => void}} props Input presentation contract.

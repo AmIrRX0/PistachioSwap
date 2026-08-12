@@ -330,8 +330,13 @@ wait_for_health() {
 reload_pm2_release() {
     local target="$1"
 
+    # PM2 startOrReload preserves an existing app cwd. Releases are immutable
+    # and old directories are pruned, so that stale cwd eventually points at a
+    # deleted release. Recreate the app definition for every activation so PM2
+    # always launches from the selected release, including during rollback.
+    pm2 delete "$API_SERVICE" >/dev/null 2>&1 || true
     PISTACHIO_PUBLIC_ROOT="$target" \
-        pm2 startOrReload "$target/ecosystem.config.cjs" \
+        pm2 start "$target/ecosystem.config.cjs" \
             --only "$API_SERVICE" \
             --update-env
 }

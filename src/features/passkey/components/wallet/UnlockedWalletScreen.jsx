@@ -142,14 +142,19 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
         clearTimer.current = setTimeout(hideSecret, 60_000)
     }
 
-    async function copyRecoveryPhrase() {
-        const phrase = String(secretRef.current ?? '').trim().replace(/\s+/gu, ' ')
-        if (!phrase) return
+    async function copySecret() {
+        let value = String(secretRef.current ?? '')
+        if (secretKind === 'Recovery phrase') {
+            value = value.trim().replace(/\s+/gu, ' ')
+        } else {
+            value = value.trim()
+        }
+        if (!value) return
         try {
             if (!navigator.clipboard?.writeText) {
                 throw new Error('Clipboard access is unavailable.')
             }
-            await navigator.clipboard.writeText(phrase)
+            await navigator.clipboard.writeText(value)
             setSecretCopied(true)
         } catch (nextError) {
             setError(nextError)
@@ -248,7 +253,7 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
                                     ))}
                                 </ol>
                                 <div className="pistachio-wallet-inline">
-                                    <button type="button" onClick={copyRecoveryPhrase}>
+                                    <button type="button" onClick={copySecret}>
                                         <Copy aria-hidden="true" /> {secretCopied ? 'Copied' : 'Copy recovery phrase'}
                                     </button>
                                     <button type="button" onClick={hideSecret}>Hide</button>
@@ -257,7 +262,12 @@ function UnlockedContent({ onSensitiveChange, snapshot }) {
                         ) : (
                             <>
                                 <code>{secretRef.current}</code>
-                                <button type="button" onClick={hideSecret}>Hide</button>
+                                <div className="pistachio-wallet-inline">
+                                    <button type="button" onClick={copySecret}>
+                                        <Copy aria-hidden="true" /> {secretCopied ? 'Copied' : 'Copy private key'}
+                                    </button>
+                                    <button type="button" onClick={hideSecret}>Hide</button>
+                                </div>
                             </>
                         )}
                     </div>

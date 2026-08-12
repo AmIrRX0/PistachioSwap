@@ -1,10 +1,10 @@
 PistachioSwap
 Copyright (c) 2026 parsij
 
-The PolyForm Noncommercial License 1.0.0 in LICENSE applies to the portions of this repository for which parsij controls the copyright.
+The PolyForm Noncommercial License 1.0.0 in LICENSE applies to portions of this repository for which parsij controls the copyright. Commercial use of those owner-controlled portions requires a separate written license from parsij. The copyright owner remains free to use and license owner-controlled code commercially.
 
-Commercial use of those portions requires a separate written license from parsij. The copyright owner remains free to use and license owner-controlled code commercially.
+Third-party software, dependencies, fonts, SDKs, data, generated material, and separately identified files remain governed by their respective licenses, notices, API terms, and trademark rights. Nothing in the PistachioSwap license removes or overrides third-party rights. THIRD_PARTY_NOTICES.md and the generated release license artifacts document the project's third-party notice process; exact installed third-party license texts control over summaries.
 
-Third-party software, dependencies, generated material, and separately identified files remain governed by their respective licenses and notices. Nothing in the PistachioSwap license removes or overrides third-party rights.
+Contributions are governed by CONTRIBUTING.md and CONTRIBUTOR_ASSIGNMENT_AGREEMENT.md. CONTRIBUTORS.md is a descriptive GitHub-history record and does not itself grant ownership, commercial licensing authority, compensation, equity, royalties, governance rights, or other legal rights.
 
-Contributions are accepted only under CONTRIBUTING.md and CONTRIBUTOR_ASSIGNMENT_AGREEMENT.md. A contribution does not provide compensation, equity, royalties, governance rights, repository ownership, or commercial licensing authority unless a separate signed agreement expressly says otherwise.
+PRIVACY.md and TERMS.md are repository-aligned pre-launch drafts. Before commercial launch, the actual operator must finalize entity/contact information, production vendors, retention schedules, supported jurisdictions, fees, compliance decisions, and dispute terms with qualified counsel.

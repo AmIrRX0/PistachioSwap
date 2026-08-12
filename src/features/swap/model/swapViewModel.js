@@ -90,6 +90,34 @@ function unavailableWalletChainNotice(chainIds = []) {
     if (names.length === 0) return 'Some network balances could not be refreshed.'
     return `Some network balances could not be refreshed: ${names.join(', ')}.`
 }
+
+export function getWalletBalanceNotice({
+    activeChainId,
+    backendWalletTokens = [],
+    walletTokenError = null,
+    walletTokenStale = false,
+    walletTokenFailedChainIds = [],
+} = {}) {
+    const hasUsableWalletTokens = Array.isArray(backendWalletTokens) &&
+        backendWalletTokens.length > 0
+    if (walletTokenError && !hasUsableWalletTokens) {
+        return 'Wallet balances could not be loaded.'
+    }
+    if (walletTokenStale === true) {
+        return 'Showing previously loaded balances.'
+    }
+    const failedChainIds = Array.isArray(walletTokenFailedChainIds)
+        ? walletTokenFailedChainIds
+        : []
+    if (!hasUsableWalletTokens && failedChainIds.length === 1) {
+        return unavailableWalletChainNotice(failedChainIds)
+    }
+    const activeChainFailed = failedChainIds.some((chainId) =>
+        Number(chainId) === Number(activeChainId))
+    return activeChainFailed
+        ? unavailableWalletChainNotice([activeChainId])
+        : null
+}
 /**
  * Builds grouped presentation contracts for `AppHeader` and `SwapPage` without owning state.
  * @param {object} context Current controller state, feature APIs, config, and semantic callbacks.
@@ -299,7 +327,7 @@ export function createSwapViewModel(context) {
         'checking-token-approval': 'Checking token approval...',
         'approving-token': 'Approve token in your wallet',
         'checking-pancake-authorization': 'Checking PancakeSwap authorization...',
-        'renewing-pancake-authorization': 'Renew PancakeSwap authorization in your wallet...',
+        'renewing-pancake-authorization': 'Renewing PancakeSwap authorization in your wallet...',
         'waiting-pancake-authorization': 'Waiting for authorization confirmation...',
         'refreshing-quote': 'Refreshing price...',
         simulating: 'Simulating swap...',
@@ -311,15 +339,13 @@ export function createSwapViewModel(context) {
     const compactRate = sellToken && buyToken
         ? formatCompactRate(inputs.sellAmount, sellToken.symbol, inputs.buyAmount, buyToken.symbol)
         : 'Rate unavailable'
-    const hasUsableWalletTokens = Array.isArray(catalog.backendWalletTokens) &&
-        catalog.backendWalletTokens.length > 0
-    const balanceNotice = catalog.walletTokenError && !hasUsableWalletTokens
-        ? 'Wallet balances could not be loaded.'
-        : catalog.walletTokenStale === true
-            ? 'Showing previously loaded balances.'
-            : catalog.walletTokenFailedChainIds.length > 0
-                ? unavailableWalletChainNotice(catalog.walletTokenFailedChainIds)
-                : null
+    const balanceNotice = getWalletBalanceNotice({
+        activeChainId: context.swapChainId,
+        backendWalletTokens: catalog.backendWalletTokens,
+        walletTokenError: catalog.walletTokenError,
+        walletTokenStale: catalog.walletTokenStale,
+        walletTokenFailedChainIds: catalog.walletTokenFailedChainIds,
+    })
 
     return {
         header: {

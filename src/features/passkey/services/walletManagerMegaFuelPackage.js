@@ -1,0 +1,187 @@
+import {
+    normalizePreparedSponsoredTransaction,
+    validateSignedPreparedTransaction,
+} from '../../gas-assist/services/metamaskMultichain.js'
+import {
+    describeTransactionReview,
+    validateLocallySignedTransaction,
+} from './transactionValidation.js'
+
+const EXPECTED_ACTIONS = Object.freeze([
+    'fee-payment-transfer',
+    'token-approval',
+    'normal-swap',
+])
+
+function packageError(code, message) {
+    const error = new Error(message)
+    error.code = code
+    return error
+}
+
+function validFutureTimestamp(value) {
+    const timestamp = Date.parse(value)
+    return Number.isFinite(timestamp) && timestamp > Date.now()
+}
+
+function chainIdNumber(value) {
+    try {
+        return Number(
+            typeof value === 'string' && /^0x[0-9a-f]+$/iu.test(value)
+                ? BigInt(value)
+                : value,
+        )
+    } catch {
+        return NaN
+    }
+}
+
+export function normalizeMegaFuelPackage(preparedPackage, walletAddress) {
+    if (!preparedPackage || typeof preparedPackage !== 'object' || Array.isArray(preparedPackage)) {
+        throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package is invalid.')
+    }
+    if (typeof preparedPackage.orderId !== 'string' || !preparedPackage.orderId || preparedPackage.orderId.length > 160) {
+        throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package has an invalid order ID.')
+    }
+    if (!validFutureTimestamp(preparedPackage.expiresAt)) {
+        throw packageError('INTENT_EXPIRED', 'The Gas Assist package expired.')
+    }
+    if (!Array.isArray(preparedPackage.transactions) || preparedPackage.transactions.length !== EXPECTED_ACTIONS.length) {
+        throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package must contain exactly three transactions.')
+    }
+
+    const byAction = new Map()
+    for (const item of preparedPackage.transactions) {
+        if (!item || typeof item !== 'object' || Array.isArray(item) ||
+            typeof item.action !== 'string' || byAction.has(item.action)) {
+            throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package contains duplicate or malformed actions.')
+        }
+        byAction.set(item.action, item)
+    }
+    if (EXPECTED_ACTIONS.some((action) => !byAction.has(action))) {
+        throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package is incomplete.')
+    }
+
+    const ordered = EXPECTED_ACTIONS.map((action) => byAction.get(action))
+    const intentIds = new Set()
+    const normalized = ordered.map((item) => {
+        if (typeof item.intentId !== 'string' || !item.intentId || item.intentId.length > 160 || intentIds.has(item.intentId)) {
+            throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package contains duplicate or invalid intent IDs.')
+        }
+        intentIds.add(item.intentId)
+        if (!validFutureTimestamp(item.expiresAt)) {
+            throw packageError('INTENT_EXPIRED', `The ${item.action} Gas Assist intent expired.`)
+        }
+        if (Date.parse(item.expiresAt) > Date.parse(preparedPackage.expiresAt)) {
+            throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'A Gas Assist intent outlives its package expiry.')
+        }
+        if (chainIdNumber(item.transaction?.chainId) !== 56) {
+            throw packageError('PISTACHIO_CHAIN_INVARIANT_FAILED', 'Gas Assist package transactions must use BNB Chain.')
+        }
+        return {
+            action: item.action,
+            intentId: item.intentId,
+            expiresAt: item.expiresAt,
+            transaction: normalizePreparedSponsoredTransaction(item.transaction, walletAddress),
+        }
+    })
+
+    let nonces
+    try {
+        nonces = normalized.map((item) => BigInt(item.transaction.nonce))
+    } catch {
+        throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package contains an invalid nonce.')
+    }
+    if (nonces[1] !== nonces[0] + 1n || nonces[2] !== nonces[0] + 2n) {
+        throw packageError('SPONSORSHIP_PACKAGE_NONCE_MISMATCH', 'Gas Assist package transactions must use consecutive nonces.')
+    }
+
+    return Object.freeze({
+        orderId: preparedPackage.orderId,
+        expiresAt: preparedPackage.expiresAt,
+        transactions: normalized.map((item) => Object.freeze(item)),
+    })
+}
+
+export const methods = {
+    async signMegaFuelPackage(preparedPackage) {
+        const wasUnlocked = this.phase === 'unlocked'
+        await this.ensureUnlockedForSigning()
+        const context = this.captureSigningContext(56)
+        const normalizedPackage = normalizeMegaFuelPackage(preparedPackage, context.address)
+
+        await this.reviewQueue.request({
+            walletAddress: context.address,
+            chainId: 56,
+            action: 'Confirm Gas Assist swap',
+            payload: {
+                purpose: 'One-time authorization for this exact Gas Assist package',
+                orderId: normalizedPackage.orderId,
+                expiresAt: normalizedPackage.expiresAt,
+                transactions: normalizedPackage.transactions.map((item) => ({
+                    action: item.action,
+                    intentId: item.intentId,
+                    ...describeTransactionReview(item.transaction, 'megafuel'),
+                })),
+            },
+        })
+        this.assertSigningContext(context)
+
+        // An already-unlocked wallet has not necessarily performed a fresh
+        // passkey ceremony for this package, so require exactly one here.
+        // A resumed session was unlocked by ensureUnlockedForSigning(), which
+        // already performed that one passkey ceremony and must not prompt twice.
+        if (wasUnlocked) {
+            await this.reauthenticate()
+            this.assertSigningContext(context)
+        }
+
+        const signedTransactions = []
+        for (const intent of normalizedPackage.transactions) {
+            if (!validFutureTimestamp(intent.expiresAt) || !validFutureTimestamp(normalizedPackage.expiresAt)) {
+                throw packageError('INTENT_EXPIRED', 'The Gas Assist package expired before signing completed.')
+            }
+            this.assertSigningContext(context)
+            let signedRawTransaction = null
+            try {
+                signedRawTransaction = (
+                    await this.client.request('signTransaction', {
+                        transaction: intent.transaction,
+                        mode: 'megafuel',
+                    })
+                ).signedTransaction
+                this.assertSigningContext(context)
+                await validateLocallySignedTransaction({
+                    signedTransaction: signedRawTransaction,
+                    request: intent.transaction,
+                    walletAddress: context.address,
+                    mode: 'megafuel',
+                })
+                await validateSignedPreparedTransaction({
+                    signedRawTransaction,
+                    normalizedTransaction: intent.transaction,
+                    authenticatedWalletAddress: context.address,
+                    multichainAccount: context.address,
+                })
+                signedTransactions.push({
+                    intentId: intent.intentId,
+                    action: intent.action,
+                    signedRawTransaction,
+                })
+            } finally {
+                signedRawTransaction = null
+            }
+        }
+        await this.recordActivity()
+        return {
+            orderId: normalizedPackage.orderId,
+            signedTransactions,
+        }
+    },
+}
+
+export const megaFuelPackageSigningInternals = {
+    EXPECTED_ACTIONS,
+    chainIdNumber,
+    validFutureTimestamp,
+}

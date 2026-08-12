@@ -12,6 +12,7 @@ const EXPECTED_ACTIONS = Object.freeze([
     'token-approval',
     'normal-swap',
 ])
+const MAX_PACKAGE_CHARS = 512 * 1024
 
 function packageError(code, message) {
     const error = new Error(message)
@@ -22,6 +23,14 @@ function packageError(code, message) {
 function validFutureTimestamp(value) {
     const timestamp = Date.parse(value)
     return Number.isFinite(timestamp) && timestamp > Date.now()
+}
+
+function serializedLength(value) {
+    try {
+        return JSON.stringify(value).length
+    } catch {
+        return Number.POSITIVE_INFINITY
+    }
 }
 
 function chainIdNumber(value) {
@@ -37,6 +46,12 @@ function chainIdNumber(value) {
 }
 
 export function normalizeMegaFuelPackage(preparedPackage, walletAddress) {
+    if (serializedLength(preparedPackage) > MAX_PACKAGE_CHARS) {
+        throw packageError(
+            'PISTACHIO_REQUEST_TOO_LARGE',
+            'The Gas Assist package exceeds the Pistachio Wallet safety limit.',
+        )
+    }
     if (!preparedPackage || typeof preparedPackage !== 'object' || Array.isArray(preparedPackage)) {
         throw packageError('SPONSORSHIP_PACKAGE_INVALID', 'The Gas Assist package is invalid.')
     }
@@ -105,13 +120,25 @@ export function normalizeMegaFuelPackage(preparedPackage, walletAddress) {
 
 export const methods = {
     async signMegaFuelPackage(preparedPackage) {
-        const wasUnlocked = this.phase === 'unlocked'
-        await this.ensureUnlockedForSigning()
-        const context = this.captureSigningContext(56)
-        const normalizedPackage = normalizeMegaFuelPackage(preparedPackage, context.address)
+        const reviewWalletAddress = this.phase === 'unlocked' && this.address
+            ? this.address
+            : this.sessionActive && this.vault?.address
+                ? this.vault.address
+                : null
+        if (!reviewWalletAddress) {
+            throw packageError(
+                'PISTACHIO_WALLET_LOCKED',
+                'Connect Pistachio Wallet before signing a Gas Assist package.',
+            )
+        }
+
+        const normalizedPackage = normalizeMegaFuelPackage(
+            preparedPackage,
+            reviewWalletAddress,
+        )
 
         await this.reviewQueue.request({
-            walletAddress: context.address,
+            walletAddress: reviewWalletAddress,
             chainId: 56,
             action: 'Confirm Gas Assist swap',
             payload: {
@@ -125,16 +152,18 @@ export const methods = {
                 })),
             },
         })
-        this.assertSigningContext(context)
 
-        // An already-unlocked wallet has not necessarily performed a fresh
-        // passkey ceremony for this package, so require exactly one here.
-        // A resumed session was unlocked by ensureUnlockedForSigning(), which
-        // already performed that one passkey ceremony and must not prompt twice.
-        if (wasUnlocked) {
-            await this.reauthenticate()
-            this.assertSigningContext(context)
+        // The production wallet hardener makes this exactly one fresh passkey
+        // ceremony whether the worker is currently unlocked or must be resumed.
+        await this.ensureUnlockedForSigning()
+        const context = this.captureSigningContext(56)
+        if (String(context.address).toLowerCase() !== String(reviewWalletAddress).toLowerCase()) {
+            throw packageError(
+                'PISTACHIO_SIGNING_CONTEXT_CHANGED',
+                'The active wallet changed after the Gas Assist package review.',
+            )
         }
+        this.assertSigningContext(context)
 
         const signedTransactions = []
         for (const intent of normalizedPackage.transactions) {
@@ -182,6 +211,8 @@ export const methods = {
 
 export const megaFuelPackageSigningInternals = {
     EXPECTED_ACTIONS,
+    MAX_PACKAGE_CHARS,
     chainIdNumber,
+    serializedLength,
     validFutureTimestamp,
 }

@@ -50,9 +50,12 @@ function fakeManager({ phase = 'unlocked' } = {}) {
     let signed = 0
     return {
         phase,
-        address: ADDRESS,
+        address: phase === 'unlocked' ? ADDRESS : null,
+        sessionActive: true,
+        vault: { address: ADDRESS },
         ensureUnlockedForSigning: vi.fn(async function ensure() {
             this.phase = 'unlocked'
+            this.address = ADDRESS
         }),
         captureSigningContext: vi.fn(() => ({
             address: ADDRESS,
@@ -74,12 +77,15 @@ function fakeManager({ phase = 'unlocked' } = {}) {
 beforeEach(() => vi.restoreAllMocks())
 
 describe('Pistachio Wallet MegaFuel package signing', () => {
-    it('uses one review and one fresh passkey reauthentication for an unlocked wallet', async () => {
+    it('reviews the exact package once before invoking the one passkey gate', async () => {
         const manager = fakeManager({ phase: 'unlocked' })
         const result = await methods.signMegaFuelPackage.call(manager, preparedPackage())
 
         expect(manager.reviewQueue.request).toHaveBeenCalledTimes(1)
-        expect(manager.reauthenticate).toHaveBeenCalledTimes(1)
+        expect(manager.ensureUnlockedForSigning).toHaveBeenCalledTimes(1)
+        expect(manager.reauthenticate).not.toHaveBeenCalled()
+        expect(manager.reviewQueue.request.mock.invocationCallOrder[0])
+            .toBeLessThan(manager.ensureUnlockedForSigning.mock.invocationCallOrder[0])
         expect(manager.client.request).toHaveBeenCalledTimes(3)
         expect(result.signedTransactions.map((item) => item.action)).toEqual([
             'fee-payment-transfer',
@@ -88,16 +94,21 @@ describe('Pistachio Wallet MegaFuel package signing', () => {
         ])
     })
 
-    it('does not perform a second passkey reauthentication after a resumed session unlock', async () => {
+    it('uses the saved session address for review before a resumed-session passkey unlock', async () => {
         const manager = fakeManager({ phase: 'locked' })
         await methods.signMegaFuelPackage.call(manager, preparedPackage())
 
+        expect(manager.reviewQueue.request).toHaveBeenCalledWith(expect.objectContaining({
+            walletAddress: ADDRESS,
+            action: 'Confirm Gas Assist swap',
+        }))
         expect(manager.ensureUnlockedForSigning).toHaveBeenCalledTimes(1)
         expect(manager.reauthenticate).not.toHaveBeenCalled()
-        expect(manager.reviewQueue.request).toHaveBeenCalledTimes(1)
+        expect(manager.reviewQueue.request.mock.invocationCallOrder[0])
+            .toBeLessThan(manager.ensureUnlockedForSigning.mock.invocationCallOrder[0])
     })
 
-    it('rejects malformed package nonces before review or signing', async () => {
+    it('rejects malformed package nonces before review or passkey prompting', async () => {
         const manager = fakeManager({ phase: 'unlocked' })
         const pkg = preparedPackage()
         pkg.transactions[2].transaction.nonce = '0x7'
@@ -106,23 +117,35 @@ describe('Pistachio Wallet MegaFuel package signing', () => {
             methods.signMegaFuelPackage.call(manager, pkg),
         ).rejects.toMatchObject({ code: 'SPONSORSHIP_PACKAGE_NONCE_MISMATCH' })
         expect(manager.reviewQueue.request).not.toHaveBeenCalled()
-        expect(manager.reauthenticate).not.toHaveBeenCalled()
+        expect(manager.ensureUnlockedForSigning).not.toHaveBeenCalled()
         expect(manager.client.request).not.toHaveBeenCalled()
     })
 
-    it('aborts if the signing context changes after the one-time review', async () => {
+    it('rejects oversized packages before review or passkey prompting', async () => {
         const manager = fakeManager({ phase: 'unlocked' })
-        manager.assertSigningContext
-            .mockImplementationOnce(() => undefined)
-            .mockImplementationOnce(() => {
-                const error = new Error('changed')
-                error.code = 'PISTACHIO_SIGNING_CONTEXT_CHANGED'
-                throw error
-            })
+        const pkg = preparedPackage()
+        pkg.transactions[2].transaction.data = `0x${'aa'.repeat(300_000)}`
+
+        await expect(
+            methods.signMegaFuelPackage.call(manager, pkg),
+        ).rejects.toMatchObject({ code: 'PISTACHIO_REQUEST_TOO_LARGE' })
+        expect(manager.reviewQueue.request).not.toHaveBeenCalled()
+        expect(manager.ensureUnlockedForSigning).not.toHaveBeenCalled()
+    })
+
+    it('aborts if the active wallet changes after review and passkey authorization', async () => {
+        const manager = fakeManager({ phase: 'unlocked' })
+        manager.captureSigningContext.mockReturnValue({
+            address: '0x9999999999999999999999999999999999999999',
+            chainId: 56,
+            generation: 2,
+        })
 
         await expect(
             methods.signMegaFuelPackage.call(manager, preparedPackage()),
         ).rejects.toMatchObject({ code: 'PISTACHIO_SIGNING_CONTEXT_CHANGED' })
+        expect(manager.reviewQueue.request).toHaveBeenCalledTimes(1)
+        expect(manager.ensureUnlockedForSigning).toHaveBeenCalledTimes(1)
         expect(manager.client.request).not.toHaveBeenCalled()
     })
 })

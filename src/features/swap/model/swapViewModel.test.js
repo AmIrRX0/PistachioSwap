@@ -16,7 +16,7 @@ describe('getWalletBalanceNotice', () => {
             activeChainId: 56,
             backendWalletTokens: [{ chainId: 56 }],
             walletTokenFailedChainIds: [25, 56, 146],
-        })).toBe('Some network balances could not be refreshed: BNB Chain.')
+        })).toBe('Some network balances could not be refreshed: BNB Smart Chain.')
     })
 
     it('preserves full wallet-load and stale-balance notices', () => {

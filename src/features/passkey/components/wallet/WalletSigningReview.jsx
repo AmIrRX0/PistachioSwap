@@ -107,6 +107,7 @@ function SigningReviewDialog() {
     const calldata = String(payload.calldata ?? '')
     const hasCalldata = calldata && calldata !== '0x'
     const hasUnknownCalldata = hasCalldata && payload.calldataKnown !== true
+    const packageTransactions = Array.isArray(payload.transactions) ? payload.transactions : []
 
     function approve() {
         if (!request || submitted) return
@@ -143,6 +144,9 @@ function SigningReviewDialog() {
                                 {payload.actionType && <div><dt>Action</dt><dd><ReviewValue>{payload.actionType}</ReviewValue></dd></div>}
                                 {payload.completeMessage !== undefined && <div className="full"><dt>Complete message</dt><dd><ReviewValue>{payload.completeMessage}</ReviewValue></dd></div>}
                                 {payload.purpose && <div><dt>Purpose</dt><dd><ReviewValue>{payload.purpose}</ReviewValue></dd></div>}
+                                {payload.orderId && <div><dt>Gas Assist order</dt><dd><ReviewValue>{payload.orderId}</ReviewValue></dd></div>}
+                                {payload.expiresAt && <div><dt>Package expires</dt><dd><ReviewValue>{payload.expiresAt}</ReviewValue></dd></div>}
+                                {packageTransactions.length > 0 && <div className="full"><dt>Exact package transactions</dt><dd><ReviewValue>{packageTransactions}</ReviewValue></dd></div>}
                                 {payload.domain && <div className="full"><dt>Domain</dt><dd><ReviewValue>{payload.domain}</ReviewValue></dd></div>}
                                 {payload.primaryType && <div><dt>Primary type</dt><dd><ReviewValue>{payload.primaryType}</ReviewValue></dd></div>}
                                 {payload.verifyingContract && <div><dt>Verifying contract</dt><dd><ReviewValue>{payload.verifyingContract}</ReviewValue></dd></div>}
@@ -157,6 +161,7 @@ function SigningReviewDialog() {
                                 {payload.gasPrice !== undefined && <div><dt>Gas price</dt><dd><ReviewValue>{payload.gasPrice}</ReviewValue></dd></div>}
                                 {hasCalldata && <div className="full"><dt>Transaction data</dt><dd><ReviewValue>{calldata}</ReviewValue></dd></div>}
                             </dl>
+                            {packageTransactions.length > 0 && <div className="pistachio-wallet-info"><ShieldCheck aria-hidden="true" /><p>One approval and one passkey check authorize only the exact Gas Assist transactions listed above. Any mismatch, account change, nonce change, chain change, expiry, or rewritten signed transaction aborts the package.</p></div>}
                             {payload.unlimitedWarning && <div className="pistachio-wallet-danger"><AlertTriangle aria-hidden="true" /><p>This request appears to grant an unlimited token approval.</p></div>}
                             {hasUnknownCalldata && <div className="pistachio-wallet-warning"><ShieldAlert aria-hidden="true" /><p>This request contains contract data. Verify the destination and full transaction data before approving.</p></div>}
                             {payload.submission && <div className="pistachio-wallet-info"><ShieldCheck aria-hidden="true" /><p>{payload.submission}</p></div>}

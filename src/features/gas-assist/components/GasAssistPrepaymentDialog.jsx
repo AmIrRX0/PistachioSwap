@@ -211,12 +211,12 @@ export default function GasAssistPrepaymentDialog({
 
     useEffect(() => setExpired(false), [order?.id])
 
-    if (!sponsorship.open) return null
-
-    const walletBusy = sponsorship.phase === 'authenticating' ||
-        sponsorship.phase === 'continuation-loading' ||
-        sponsorship.phase.endsWith('-preparing') ||
+    const walletReviewActive = sponsorship.phase === 'authenticating' ||
         sponsorship.phase.endsWith('-signing')
+    if (!sponsorship.open || walletReviewActive) return null
+
+    const walletBusy = sponsorship.phase === 'continuation-loading' ||
+        sponsorship.phase.endsWith('-preparing')
     const waitingForChain = ['payment-confirming', 'approval-confirming', 'swap-confirming'].includes(sponsorship.phase) ||
         ['payment-submitting', 'payment-submitted', 'approval-submitted', 'swap-submitted'].includes(order?.status)
     const orderExpired = expired || Boolean(order?.expiresAt && Date.parse(order.expiresAt) <= Date.now())

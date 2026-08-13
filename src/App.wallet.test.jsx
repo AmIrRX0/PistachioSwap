@@ -722,6 +722,10 @@ describe('App wallet integration', () => {
                 },
             }],
         }))
+        let resolveAuthentication
+        mocks.authenticateCrossChainWallet.mockImplementation(() => new Promise((resolve) => {
+            resolveAuthentication = resolve
+        }))
         mocks.sendPreparedCrossChainTransaction.mockRejectedValue(
             new CrossChainExecutionError(
                 'send-deposit',
@@ -730,7 +734,7 @@ describe('App wallet integration', () => {
             ),
         )
 
-        const { container, getAllByText, getByRole, getByText } = render(<App />)
+        const { container, getAllByText, getByRole, getByText, queryByRole } = render(<App />)
         fireEvent.click(container.querySelector('.buy-token-position button'))
         fireEvent.click(getByRole('button', { name: 'Token network' }))
         fireEvent.click(getByRole('option', { name: 'Base' }))
@@ -738,8 +742,18 @@ describe('App wallet integration', () => {
         fireEvent.change(getByRole('textbox', { name: 'Sell amount' }), { target: { value: '1' } })
         await waitFor(() => expect(mocks.fetchCrossChainRoutes).toHaveBeenCalledOnce())
         fireEvent.click(container.querySelector('.primary-action'))
-        expect(getByRole('button', { name: 'Preparing estimate...' }).disabled).toBe(true)
+        await waitFor(() => expect(mocks.authenticateCrossChainWallet).toHaveBeenCalledOnce())
+        expect(queryByRole('heading', { name: 'Review Gas Assisted Swap' })).toBeNull()
+        expect(queryByRole('heading', { name: 'Review cross-chain swap' })).toBeNull()
+        expect(container.querySelector('.cross-chain-review-dialog')).toBeNull()
         expect(mocks.sendPreparedCrossChainTransaction).not.toHaveBeenCalled()
+        await act(async () => {
+            resolveAuthentication({
+                sessionToken: 'test-session',
+                walletAddress: ADDRESS,
+                chainId: 56,
+            })
+        })
         await waitFor(() => expect(getByRole('button', { name: 'Confirm swap' }).disabled).toBe(false))
         expect(getByText('~$0.16')).toBeTruthy()
         expect(getByText('$0.04')).toBeTruthy()
@@ -829,8 +843,12 @@ describe('App wallet integration', () => {
                 },
             }],
         }))
+        let resolveGasAssistAuthentication
+        mocks.authenticateCrossChainWallet.mockImplementation(() => new Promise((resolve) => {
+            resolveGasAssistAuthentication = resolve
+        }))
 
-        const { container, getAllByText, getByRole, getByText } = render(<App />)
+        const { container, getAllByText, getByRole, getByText, queryByRole } = render(<App />)
         fireEvent.click(container.querySelector('.sell-token-position button'))
         fireEvent.click(getAllByText('BSCX').map((node) => node.closest('.ps-token-row')).find(Boolean))
         fireEvent.click(container.querySelector('.buy-token-position button'))
@@ -841,6 +859,16 @@ describe('App wallet integration', () => {
         await waitFor(() => expect(mocks.fetchCrossChainRoutes).toHaveBeenCalledOnce())
         fireEvent.click(container.querySelector('.primary-action'))
 
+        await waitFor(() => expect(mocks.authenticateCrossChainWallet).toHaveBeenCalledOnce())
+        expect(queryByRole('heading', { name: 'Review Gas Assisted Swap' })).toBeNull()
+        expect(container.querySelector('.cross-chain-review-dialog')).toBeNull()
+        await act(async () => {
+            resolveGasAssistAuthentication({
+                sessionToken: 'test-session',
+                walletAddress: ADDRESS,
+                chainId: 56,
+            })
+        })
         await waitFor(() => expect(getByText(/Not enough BNB for network gas/)).toBeTruthy())
         const gasAssistButton = getByRole('button', { name: 'Swap using Gas Assist' })
         expect(gasAssistButton.disabled).toBe(false)

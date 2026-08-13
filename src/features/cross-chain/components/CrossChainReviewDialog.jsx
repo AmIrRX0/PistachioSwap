@@ -31,7 +31,14 @@ export default function CrossChainReviewDialog({
     onConfirm,
 }) {
     if (!open || !route) return null
-    const showGasAssistCopy = gasAssist?.required === true || gasAssist?.expected === true
+    const gasAssistState = gasAssist ?? {
+        required: false,
+        expected: false,
+        available: false,
+        status: 'idle',
+        onStart: null,
+    }
+    const showGasAssistCopy = gasAssistState.required === true || gasAssistState.expected === true
     const portalContainer = typeof document === 'undefined'
         ? undefined
         : document.querySelector('.app-shell') ?? undefined
@@ -40,6 +47,11 @@ export default function CrossChainReviewDialog({
         : preparation.status === 'refreshing'
             ? 'Refreshing route...'
             : 'Confirm swap'
+    const startGasAssist = () => {
+        if (typeof gasAssistState.onStart !== 'function') return
+        onClose()
+        void gasAssistState.onStart()
+    }
 
     return (
         <Dialog.Root open onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -120,7 +132,7 @@ export default function CrossChainReviewDialog({
                             {preparation.insufficientNativeGas && (
                                 <p className="cross-chain-error" role="status">
                                     Not enough {costs.nativeSymbol} for network gas.
-                                    {gasAssist?.required && ' Gas Assist can sponsor this exact source transaction without adding BNB to your wallet.'}
+                                    {gasAssistState.required && ' Gas Assist can sponsor this exact source transaction without adding BNB to your wallet.'}
                                 </p>
                             )}
                             {routeError && <p className="cross-chain-error" role="status">{routeError}</p>}
@@ -128,16 +140,16 @@ export default function CrossChainReviewDialog({
                         </div>
                         <div className="cross-chain-review-actions">
                             <button type="button" onClick={onClose}>Cancel</button>
-                            {gasAssist?.required ? (
+                            {gasAssistState.required ? (
                                 <button
                                     type="button"
                                     className="primary"
-                                    disabled={!gasAssist.available}
-                                    onClick={gasAssist.onStart}
+                                    disabled={!gasAssistState.available}
+                                    onClick={startGasAssist}
                                 >
-                                    {gasAssist.status === 'loading'
+                                    {gasAssistState.status === 'loading'
                                         ? 'Checking Gas Assist…'
-                                        : gasAssist.available ? GAS_ASSIST_SWAP_ACTION : 'Gas Assist unavailable'}
+                                        : gasAssistState.available ? GAS_ASSIST_SWAP_ACTION : 'Gas Assist unavailable'}
                                 </button>
                             ) : (
                                 <button type="button" className="primary" disabled={confirmDisabled} onClick={onConfirm}>

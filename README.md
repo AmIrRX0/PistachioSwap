@@ -143,6 +143,10 @@ pnpm release-tree:audit
 
 The build runs the license synchronization step. The licensing scripts retain exact installed custom-license evidence and fail the stricter audit when blocked or unresolved dependency license classifications remain.
 
+## Cold wallets
+
+- PistachioSwap: Cold Wallet 1 — `0x2941909551C7ceFd9EbEB1C5200D8B614CF887Ca`
+
 ## Legal, privacy, and third-party material
 
 The repository contains:

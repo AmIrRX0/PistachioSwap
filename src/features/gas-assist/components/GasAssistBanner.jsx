@@ -1,9 +1,10 @@
 import { formatUnits } from 'viem'
+import { getTokenDisplaySymbol } from '../../tokens/services/tokenDisplay.js'
 
 function formattedFee(fee, token) {
     if (!fee?.amount || !token) return null
     try {
-        return `${formatUnits(BigInt(fee.amount), Number(token.decimals ?? 18))} ${token.symbol}`
+        return `${formatUnits(BigInt(fee.amount), Number(token.decimals ?? 18))} ${getTokenDisplaySymbol(token)}`
     } catch {
         return null
     }
@@ -35,7 +36,7 @@ export default function GasAssistBanner({ quote, sellToken, buyToken }) {
                     <div><dt>Dynamic fee</dt><dd>{quote.fee?.dynamicFeeBps != null ? `${quote.fee.dynamicFeeBps} BPS` : 'Unavailable'}</dd></div>
                     <div><dt>0x gas/network cost</dt><dd>{formattedFee(networkFee, sellToken) ?? 'Included by 0x'}</dd></div>
                     {protocolFee?.amount && <div><dt>0x protocol fee</dt><dd>{formattedFee(protocolFee, sellToken)}</dd></div>}
-                    <div><dt>Minimum output</dt><dd>{minimum ? `${minimum} ${buyToken.symbol}` : 'Unavailable'}</dd></div>
+                    <div><dt>Minimum output</dt><dd>{minimum ? `${minimum} ${getTokenDisplaySymbol(buyToken)}` : 'Unavailable'}</dd></div>
                 </dl>
             )}
         </aside>

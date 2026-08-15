@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { formatTokenAmount, getProviderDisplayName } from '../services/crossChainRoutes.js'
 import { getCuratedEvmChain } from '../../../web3/curatedEvmChains.js'
 import { formatCostUsd } from '../../swap/model/swapDisplay.js'
+import { getTokenDisplaySymbol } from '../../tokens/services/tokenDisplay.js'
 
 /**
  * Renders the existing Radix cross-chain review portal from a prepared route view model.
@@ -65,14 +66,14 @@ export default function CrossChainReviewDialog({
                             <dl className="cross-chain-review">
                                 <div>
                                     <dt>{activeAmountSide === 'buy' ? 'You pay at most' : 'You pay'}</dt>
-                                    <dd>{formatTokenAmount(route.inputAmount, sellToken?.decimals)} {sellToken?.symbol}</dd>
+                                    <dd>{formatTokenAmount(route.inputAmount, sellToken?.decimals)} {getTokenDisplaySymbol(sellToken)}</dd>
                                 </div>
                                 <div>
                                     <dt>{activeAmountSide === 'buy' ? 'You receive' : 'You receive at least'}</dt>
                                     <dd>{formatTokenAmount(
                                         activeAmountSide === 'buy' ? route.outputAmount : route.minimumOutputAmount,
                                         buyToken?.decimals,
-                                    )} {buyToken?.symbol}</dd>
+                                    )} {getTokenDisplaySymbol(buyToken)}</dd>
                                 </div>
                                 {(costs.total || costs.route) && (
                                     <div>
@@ -98,7 +99,7 @@ export default function CrossChainReviewDialog({
                                 <div><dt>Destination chain</dt><dd>{getCuratedEvmChain(route.destinationChainId)?.name ?? route.destinationChainId}</dd></div>
                                 <div><dt>Provider</dt><dd>{getProviderDisplayName(route.provider)}</dd></div>
                                 <div><dt>Estimated arrival</dt><dd>~{route.durationSeconds} seconds</dd></div>
-                                <div><dt>Minimum received</dt><dd>{formatTokenAmount(route.minimumOutputAmount, buyToken?.decimals)} {buyToken?.symbol}</dd></div>
+                                <div><dt>Minimum received</dt><dd>{formatTokenAmount(route.minimumOutputAmount, buyToken?.decimals)} {getTokenDisplaySymbol(buyToken)}</dd></div>
                                 {route.expiresAt && <div><dt>Expires</dt><dd>{route.expiresAt}</dd></div>}
                             </dl>
                             <p className="cross-chain-cost-note">Final network cost may change with gas prices.</p>

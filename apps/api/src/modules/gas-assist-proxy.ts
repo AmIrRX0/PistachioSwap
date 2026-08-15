@@ -96,10 +96,34 @@ export function readGasAssistProxyConfig(): ProxyConfig | null {
     }
 }
 
-function disabledResponse(pathname: string) {
-    const publicPathname = pathname.startsWith('/api/v1/')
-        ? pathname.slice('/api'.length)
-        : pathname
+/*
+ * The router matches the raw request target while `URL` collapses dot
+ * segments, so the two disagree about what the path is. Every consumer below
+ * must therefore work from one resolved path, and that path is only accepted
+ * when it still sits under a proxied prefix after normalization. Without this,
+ * `/v1/gas-assist/../../anything` matches the wildcard route and is forwarded
+ * to the private service carrying the internal token.
+ */
+const PROXIED_PATH_PREFIX = /^\/v1\/(?:gas-assist|sponsorship)\//
+const ENCODED_PATH_SEPARATOR = /%2e|%2f|%5c/i
+
+function resolvePublicPath(rawUrl: string) {
+    const rawPathname = rawUrl.split('#')[0].split('?')[0]
+    if (ENCODED_PATH_SEPARATOR.test(rawPathname)) return null
+    if (rawPathname.split('/').some((segment) =>
+        segment === '.' || segment === '..',
+    )) return null
+
+    const parsed = new URL(rawUrl, 'http://pistachio.local')
+    const publicPathname = parsed.pathname.startsWith('/api/v1/')
+        ? parsed.pathname.slice('/api'.length)
+        : parsed.pathname
+    if (!PROXIED_PATH_PREFIX.test(publicPathname)) return null
+
+    return { publicPathname, search: parsed.search }
+}
+
+function disabledResponse(publicPathname: string) {
     if (publicPathname === '/v1/gas-assist/config') {
         return { enabled: false, mode: 'disabled' }
     }
@@ -115,16 +139,15 @@ function requestBody(request: FastifyRequest) {
     return JSON.stringify(request.body)
 }
 
-function targetUrl(request: FastifyRequest, baseUrl: URL) {
-    const rawUrl = request.raw.url || request.url
-    const parsed = new URL(rawUrl, 'http://pistachio.local')
-    const publicPathname = parsed.pathname.startsWith('/api/v1/')
-        ? parsed.pathname.slice('/api'.length)
-        : parsed.pathname
+function targetUrl(
+    resolved: { publicPathname: string, search: string },
+    baseUrl: URL,
+) {
     const target = new URL(baseUrl)
     const basePath = target.pathname.replace(/\/+$/, '')
-    target.pathname = `${basePath}${publicPathname}`.replace(/\/{2,}/g, '/')
-    target.search = parsed.search
+    target.pathname = `${basePath}${resolved.publicPathname}`
+        .replace(/\/{2,}/g, '/')
+    target.search = resolved.search
     return target
 }
 
@@ -176,13 +199,19 @@ export async function proxyGasAssistRequest(
     reply: FastifyReply,
 ) {
     const config = readGasAssistProxyConfig()
-    const pathname = new URL(
-        request.raw.url || request.url,
-        'http://pistachio.local',
-    ).pathname
+    const resolved = resolvePublicPath(request.raw.url || request.url)
+
+    if (!resolved) {
+        return reply.code(404).send({
+            error: {
+                code: 'GAS_ASSIST_ROUTE_NOT_FOUND',
+                message: 'This Gas Assist route does not exist.',
+            },
+        })
+    }
 
     if (!config) {
-        const disabled = disabledResponse(pathname)
+        const disabled = disabledResponse(resolved.publicPathname)
         if (disabled) return disabled
         return reply.code(503).send({
             error: {
@@ -197,7 +226,7 @@ export async function proxyGasAssistRequest(
     timeout.unref()
 
     try {
-        const response = await fetch(targetUrl(request, config.baseUrl), {
+        const response = await fetch(targetUrl(resolved, config.baseUrl), {
             method: request.method,
             headers: proxyHeaders(request, config),
             body: requestBody(request),

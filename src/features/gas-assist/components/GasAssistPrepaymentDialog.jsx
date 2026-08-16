@@ -104,7 +104,7 @@ function statusContent({ phase, order, orderExpired }) {
         return { title: 'Preparing your swap', detail: 'Building the exact fee, approval, and swap transactions.' }
     }
     if (phase === 'package-signing') {
-        return { title: 'Confirm in Pistachio Wallet', detail: 'Review and confirm the three exact transactions. Nothing is broadcast until all are signed.' }
+        return { title: 'Confirm with your passkey', detail: 'One passkey check authorizes this exact three-transaction package.' }
     }
     if (['payment-confirming', 'payment-submitting'].includes(phase) ||
         ['payment-submitting', 'payment-submitted'].includes(order?.status)) {

@@ -571,13 +571,13 @@ button.uni-activity-row:hover {
     }
 }
 
-/* Signing review must remain above both account and nested transaction dialogs. */
+/* Signing review must remain above account, nested transaction, and Gas Assist dialogs. */
 .pistachio-wallet-overlay.pistachio-signing-overlay {
-    z-index: 2200;
+    z-index: 10020;
 }
 
 .pistachio-wallet-dialog.pistachio-signing-review {
-    z-index: 2201;
+    z-index: 10021;
 }
 .uni-wallet-disconnect-error {
     margin: 0;

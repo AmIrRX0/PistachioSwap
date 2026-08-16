@@ -119,7 +119,8 @@ describe('Gas Assist prepayment review', () => {
                 buyToken={buyToken}
             />,
         )
-        expect(screen.getByText('Confirm in Pistachio Wallet')).toBeTruthy()
+        expect(screen.getByText('Confirm with your passkey')).toBeTruthy()
+        expect(screen.getByText(/One passkey check authorizes this exact three-transaction package/)).toBeTruthy()
 
         rerender(
             <GasAssistPrepaymentDialog

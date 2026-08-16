@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import {
     CheckCircle2,
     ChevronDown,
+    CircleAlert,
     LoaderCircle,
     ShieldCheck,
     X,
@@ -137,10 +138,11 @@ function statusContent({ phase, order, orderExpired }) {
 function CompactStatus({ status }) {
     if (!status) return null
     const complete = status.tone === 'success'
+    const failed = status.tone === 'error'
     return (
         <section className={`gas-assist-compact-status ${status.tone ?? ''}`} role="status" aria-live="polite">
             <span className="gas-assist-status-icon" aria-hidden="true">
-                {complete ? <CheckCircle2 /> : <LoaderCircle />}
+                {complete ? <CheckCircle2 /> : failed ? <CircleAlert /> : <LoaderCircle />}
             </span>
             <div>
                 <strong>{status.title}</strong>

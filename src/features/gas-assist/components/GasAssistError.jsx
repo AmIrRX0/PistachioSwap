@@ -19,6 +19,8 @@ const messages = {
     ORDER_EXPIRED: 'This Gas Assist quote expired. Create a fresh quote.',
     ACTIVE_ORDER_EXISTS: 'A Gas Assist swap is already active for this wallet.',
     ORDER_REQUOTE_REQUIRED: 'The price changed too much. Refresh and try again.',
+    CROSS_CHAIN_SPONSORSHIP_UNSTABLE: 'The exact sponsored route changed. Refresh and try again.',
+    SPONSORSHIP_ORDER_FAILED: 'Gas Assist could not complete this swap. Try again.',
     SPONSORED_ROUTE_UNAVAILABLE: 'No safe Gas Assist route is available right now.',
     PRESIGNED_PACKAGE_REQUIRES_UNISWAP: 'This route cannot currently use the one-tap Gas Assist flow.',
     PRESIGNED_PACKAGE_NONCE_MISMATCH: 'Your wallet nonce changed. Refresh and try again.',
@@ -53,7 +55,6 @@ const messages = {
 /** Presents a concise user-safe Gas Assist error while diagnostics remain in the technical drawer and console. */
 export default function GasAssistError({ error }) {
     const code = typeof error === 'string' ? error : error?.code
-    const message = messages[code]
-    if (!message) return null
+    const message = messages[code] ?? 'Gas Assist could not complete this swap. Try again.'
     return <p className="gas-assist-error" role="alert">{message}</p>
 }

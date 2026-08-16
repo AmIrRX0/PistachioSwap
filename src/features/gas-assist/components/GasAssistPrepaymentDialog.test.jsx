@@ -244,6 +244,24 @@ describe('Gas Assist prepayment review', () => {
         expect(document.querySelector('.gas-assist-compact-status.error')).toBeTruthy()
     })
 
+    it('maps a sponsored simulation failure to a refreshable review error', () => {
+        render(<GasAssistPrepaymentDialog
+            sponsorship={sponsorship({
+                phase: 'failed',
+                error: {
+                    code: 'SPONSORED_ACTION_REVERTED',
+                    message: 'The sponsored transaction cannot be simulated against current chain state.',
+                },
+            })}
+            sellToken={sellToken}
+            buyToken={buyToken}
+        />)
+
+        expect(screen.getByText('This swap could not be simulated. Refresh and try again.')).toBeTruthy()
+        expect(screen.queryByText('The sponsored transaction cannot be simulated against current chain state.')).toBeNull()
+        expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+    })
+
     it('shows a simple error without exposing backend diagnostics in the interface', () => {
         render(<GasAssistPrepaymentDialog
             sponsorship={sponsorship({

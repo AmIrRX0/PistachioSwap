@@ -240,6 +240,8 @@ describe('Gas Assist prepayment review', () => {
 
         expect(screen.queryByRole('button', { name: 'Swap using Gas Assist' })).toBeNull()
         expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+        expect(screen.getByText('Gas Assist could not complete this swap. Try again.')).toBeTruthy()
+        expect(document.querySelector('.gas-assist-compact-status.error')).toBeTruthy()
     })
 
     it('shows a simple error without exposing backend diagnostics in the interface', () => {

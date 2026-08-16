@@ -100,9 +100,9 @@ describe('Gas Assist prepayment review', () => {
         expect(screen.queryByText(/converts only/i)).toBeNull()
     })
 
-    it('fully hands modal focus to Pistachio Wallet while authentication or signing is active', () => {
+    it('keeps progress visible while authentication and package signing are active', () => {
         const value = sponsorship({ phase: 'authenticating', order: null })
-        const { container, rerender } = render(
+        const { rerender } = render(
             <GasAssistPrepaymentDialog
                 sponsorship={value}
                 sellToken={sellToken}
@@ -110,7 +110,7 @@ describe('Gas Assist prepayment review', () => {
             />,
         )
 
-        expect(container.firstChild).toBeNull()
+        expect(screen.getByText('Confirm with your passkey')).toBeTruthy()
 
         rerender(
             <GasAssistPrepaymentDialog
@@ -119,7 +119,7 @@ describe('Gas Assist prepayment review', () => {
                 buyToken={buyToken}
             />,
         )
-        expect(container.firstChild).toBeNull()
+        expect(screen.getByText('Confirm in Pistachio Wallet')).toBeTruthy()
 
         rerender(
             <GasAssistPrepaymentDialog
@@ -129,6 +129,18 @@ describe('Gas Assist prepayment review', () => {
             />,
         )
         expect(screen.getByText('Review Gas Assisted Swap')).toBeTruthy()
+    })
+
+    it('shows a shimmer skeleton immediately while the review is loading', () => {
+        render(<GasAssistPrepaymentDialog
+            sponsorship={sponsorship({ phase: 'preview-loading', order: null })}
+            sellToken={sellToken}
+            buyToken={buyToken}
+        />)
+
+        expect(screen.getByLabelText('Loading Gas Assist review')).toBeTruthy()
+        expect(document.querySelector('.gas-assist-review-skeleton')).toBeTruthy()
+        expect(screen.queryByRole('button', { name: 'Swap using Gas Assist' })).toBeNull()
     })
 
     it('shows compact progress and prevents another primary submission while payment is pending', () => {

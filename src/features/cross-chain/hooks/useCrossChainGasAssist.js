@@ -90,6 +90,7 @@ export function useCrossChainGasAssist({
     async function start() {
         if (!available || previewOperationRef.current) return false
         previewOperationRef.current = true
+        sponsorship.openPreviewLoading()
         const contextAtStart = { ...contextRef.current }
         preparedResponseRef.current = null
         setPreviewStatus('loading')
@@ -108,6 +109,7 @@ export function useCrossChainGasAssist({
         } catch (error) {
             setPreviewStatus('error')
             setPreviewError(error)
+            sponsorship.failPreview(error)
             console.error('[pistachio-swap] Cross-chain Gas Assist preview failed', {
                 code: error?.code ?? 'CROSS_CHAIN_GAS_ASSIST_PREVIEW_FAILED',
                 message: error?.message ?? 'Gas Assist preview failed.',

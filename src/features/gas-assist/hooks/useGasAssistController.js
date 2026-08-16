@@ -12,6 +12,23 @@ function usdMicros(value) {
     return BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, '0') || '0')
 }
 
+function previewReviewOrder(preview, walletAddress) {
+    if (!preview) return null
+    const micros = (value) => usdMicros(value)?.toString() ?? '0'
+    return {
+        ...preview,
+        id: `preview:${preview.expiresAt}`,
+        isPreview: true,
+        walletAddress,
+        status: 'preview',
+        currentRequiredAction: 'prepare-payment',
+        fixedServiceFeeUsdMicros: micros(preview.amountsUsd?.fixedServiceFee),
+        platformFeeUsdMicros: micros(preview.amountsUsd?.platformFee),
+        gasReserveUsdMicros: micros(preview.amountsUsd?.gasReserve),
+        totalPrepaymentUsdMicros: micros(preview.amountsUsd?.totalPrepayment),
+    }
+}
+
 function commercialFeeRaw(preview) {
     try {
         const totalRaw = BigInt(preview.paymentAmountRaw)
@@ -146,6 +163,16 @@ export function useGasAssistController({
                     ? 'error'
                     : previewState.status
         : normalQuoteStatus
+    const reviewPreview = useMemo(
+        () => previewReviewOrder(previewState.preview, account),
+        [account, previewState.preview],
+    )
+    const prepaidSponsorshipView = useMemo(() => ({
+        ...prepaidSponsorship,
+        start: reviewPreview
+            ? () => prepaidSponsorship.reviewOrder(reviewPreview)
+            : prepaidSponsorship.start,
+    }), [prepaidSponsorship, reviewPreview])
 
     useEffect(() => {
         if (!gasAssistRequested || activeAmountSide !== 'sell' || buyInputDenomination !== 'TOKEN') return
@@ -207,7 +234,7 @@ export function useGasAssistController({
 
     return {
         gasAssist,
-        prepaidSponsorship,
+        prepaidSponsorship: prepaidSponsorshipView,
         prepaidRequired,
         preview: prepaidEnabled ? previewState.preview : null,
         previewStatus: prepaidEnabled ? previewState.status : 'idle',
@@ -222,5 +249,6 @@ export function useGasAssistController({
 export const gasAssistControllerInternals = {
     commercialFeeRaw,
     logGasAssistDiagnostic,
+    previewReviewOrder,
     usdMicros,
 }

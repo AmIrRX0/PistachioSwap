@@ -108,6 +108,18 @@ describe('Pistachio Wallet MegaFuel package signing', () => {
             .toBeLessThan(manager.ensureUnlockedForSigning.mock.invocationCallOrder[0])
     })
 
+    it('uses the preceding bounded Gas Assist authorization without a second approval', async () => {
+        const manager = fakeManager({ phase: 'unlocked' })
+        manager.hasActiveGasAssistAuthorization = vi.fn(() => true)
+
+        await methods.signMegaFuelPackage.call(manager, preparedPackage())
+
+        expect(manager.hasActiveGasAssistAuthorization).toHaveBeenCalledOnce()
+        expect(manager.reviewQueue.request).not.toHaveBeenCalled()
+        expect(manager.ensureUnlockedForSigning).toHaveBeenCalledOnce()
+        expect(manager.client.request).toHaveBeenCalledTimes(3)
+    })
+
     it('rejects malformed package nonces before review or passkey prompting', async () => {
         const manager = fakeManager({ phase: 'unlocked' })
         const pkg = preparedPackage()

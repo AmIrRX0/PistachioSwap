@@ -949,6 +949,11 @@ describe('cross-chain backend', () => {
               })
         const quote = await adapter.getQuote(request, await adapter.getCapabilities())
         expect(quote.steps.map((step) => step.transaction?.to)).toEqual([sourceToken, v3Router])
+        expect(quote.transaction).toMatchObject({
+            to: v3Router,
+            data: '0x1234',
+            allowanceTarget: v3Proxy,
+        })
     })
 
     it('accepts Relay v3 ApprovalProxy source execution only after its matching approval', async () => {
@@ -965,6 +970,11 @@ describe('cross-chain backend', () => {
               })
         const quote = await adapter.getQuote(request, await adapter.getCapabilities())
         expect(quote.steps.map((step) => step.transaction?.to)).toEqual([sourceToken, v3Proxy])
+        expect(quote.transaction).toMatchObject({
+            to: v3Proxy,
+            data: '0x1234',
+            allowanceTarget: v3Proxy,
+        })
     })
 
     it('accepts Relay ApprovalProxy execution when sufficient allowance omits the approval step', async () => {

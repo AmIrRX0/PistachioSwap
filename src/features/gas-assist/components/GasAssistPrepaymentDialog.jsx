@@ -311,7 +311,9 @@ export default function GasAssistPrepaymentDialog({
                         </div>
                     )}
 
-                    {status && !['review', 'preview-loading'].includes(sponsorship.phase) && (
+                    {status &&
+                        sponsorship.phase !== 'preview-loading' &&
+                        (sponsorship.phase !== 'review' || orderExpired) && (
                         <CompactStatus status={status} />
                     )}
                     {visibleError && <GasAssistError error={visibleError} />}

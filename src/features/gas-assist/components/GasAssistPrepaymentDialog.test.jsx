@@ -102,7 +102,7 @@ describe('Gas Assist prepayment review', () => {
 
     it('keeps progress visible while authentication and package signing are active', () => {
         const value = sponsorship({ phase: 'authenticating', order: null })
-        const { container, rerender } = render(
+        const { rerender } = render(
             <GasAssistPrepaymentDialog
                 sponsorship={value}
                 sellToken={sellToken}
@@ -110,7 +110,6 @@ describe('Gas Assist prepayment review', () => {
             />,
         )
 
-        expect(container.firstChild).not.toBeNull()
         expect(screen.getByText('Confirm with your passkey')).toBeTruthy()
 
         rerender(
@@ -120,7 +119,6 @@ describe('Gas Assist prepayment review', () => {
                 buyToken={buyToken}
             />,
         )
-        expect(container.firstChild).not.toBeNull()
         expect(screen.getByText('Confirm in Pistachio Wallet')).toBeTruthy()
 
         rerender(

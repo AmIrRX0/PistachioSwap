@@ -116,6 +116,63 @@
 }
 .gas-assist-swap-summary > span::before { content: 'Quote refreshes in '; }
 
+.gas-assist-review-skeleton {
+    display: grid;
+    gap: 2px;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 7%);
+    border-radius: 20px;
+    background: #0f0f0f;
+}
+.gas-assist-skeleton-token {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 76px;
+    padding: 14px 16px;
+    background: #1d1d1d;
+}
+.gas-assist-skeleton-token > span {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+}
+.gas-assist-skeleton-token > div { display: grid; flex: 1; gap: 7px; }
+.gas-assist-skeleton-token i { width: 28%; height: 10px; }
+.gas-assist-skeleton-token b { width: 58%; height: 19px; }
+.gas-assist-skeleton-fee {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px;
+    background: #181818;
+}
+.gas-assist-skeleton-fee i { width: 30%; height: 12px; }
+.gas-assist-skeleton-fee b { width: 36%; height: 12px; }
+.gas-assist-skeleton-token > span,
+.gas-assist-skeleton-token i,
+.gas-assist-skeleton-token b,
+.gas-assist-skeleton-fee i,
+.gas-assist-skeleton-fee b {
+    overflow: hidden;
+    border-radius: 999px;
+    background: #2b2b2b;
+    position: relative;
+}
+.gas-assist-skeleton-token > span::after,
+.gas-assist-skeleton-token i::after,
+.gas-assist-skeleton-token b::after,
+.gas-assist-skeleton-fee i::after,
+.gas-assist-skeleton-fee b::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 8%), transparent);
+    transform: translateX(-100%);
+    animation: gas-assist-shimmer 1.35s ease-in-out infinite;
+}
+
 .gas-assist-compact-status {
     display: flex;
     align-items: center;
@@ -231,6 +288,7 @@
 .gas-assist-confirmed { color: #9ddb8d; }
 
 @keyframes gas-assist-spin { to { transform: rotate(360deg); } }
+@keyframes gas-assist-shimmer { to { transform: translateX(100%); } }
 @keyframes gas-assist-progress { from { transform: translateX(-110%); } to { transform: translateX(340%); } }
 @keyframes gas-assist-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
@@ -242,6 +300,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .gas-assist-status-icon svg,
+    .gas-assist-review-skeleton *::after,
     .gas-assist-confirmation-dot,
     .gas-assist-progress-track span { animation: none; }
     .gas-assist-progress-track span { width: 100%; }

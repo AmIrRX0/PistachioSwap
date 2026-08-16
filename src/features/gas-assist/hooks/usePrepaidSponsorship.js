@@ -89,6 +89,7 @@ export function usePrepaidSponsorship({
     onSubmitted,
     createOrder: createOrderOverride,
     beforeAuthenticate,
+    previewOrder,
 }) {
     const connection = useConnection()
     const { data: walletClient } = useWalletClient({ chainId: 56 })
@@ -208,7 +209,56 @@ export function usePrepaidSponsorship({
         return () => controller.abort()
     }, [quoteEndpoint, walletAddress])
 
+    const reviewOrder = useCallback((order) => {
+        if (!order?.id || order.isPreview !== true) {
+            throw flowError(
+                'SPONSORSHIP_PREVIEW_INVALID',
+                'Gas Assist returned an invalid preview.',
+                { stage: 'preview.open' },
+            )
+        }
+        if (
+            order.walletAddress &&
+            String(order.walletAddress).toLowerCase() !== String(walletAddress).toLowerCase()
+        ) {
+            throw flowError(
+                'PISTACHIO_ACCOUNT_MISMATCH',
+                'The Gas Assist preview belongs to another wallet.',
+                { stage: 'preview.open' },
+            )
+        }
+        flowEpochRef.current += 1
+        operationRef.current = null
+        sessionTokenRef.current = null
+        setState({ ...initial, open: true, phase: 'review', config, order })
+        gasAssistTrace('flow.preview.opened', {
+            walletAddress,
+            previewId: order.id,
+        })
+    }, [config, walletAddress])
+
+    const openPreviewLoading = useCallback(() => {
+        flowEpochRef.current += 1
+        operationRef.current = null
+        sessionTokenRef.current = null
+        setState({ ...initial, open: true, phase: 'preview-loading', config })
+        gasAssistTrace('flow.preview.loading', { walletAddress })
+    }, [config, walletAddress])
+
+    const failPreview = useCallback((error) => {
+        setState((current) => ({
+            ...current,
+            open: true,
+            phase: 'failed',
+            error,
+        }))
+    }, [])
+
     const start = useCallback(async () => {
+        if (previewOrder) {
+            reviewOrder(previewOrder)
+            return
+        }
         const operation = 'start'
         if (!beginOperation(operation)) return
         const walletEpoch = walletEpochRef.current
@@ -323,35 +373,7 @@ export function usePrepaidSponsorship({
         } finally {
             finishOperation(operation)
         }
-    }, [beginOperation, buyToken, capability.rawTransactionSigningSupported, config, configError, configStatus, connection.connector?.id, createOrderOverride, finishOperation, grossInputAmount, isCurrent, publishFailure, quoteEndpoint, sellToken, slippageBps, walletAddress, walletClient])
-
-    const reviewOrder = useCallback((order) => {
-        if (!order?.id || order.isPreview !== true) {
-            throw flowError(
-                'SPONSORSHIP_PREVIEW_INVALID',
-                'Gas Assist returned an invalid preview.',
-                { stage: 'preview.open' },
-            )
-        }
-        if (
-            order.walletAddress &&
-            String(order.walletAddress).toLowerCase() !== String(walletAddress).toLowerCase()
-        ) {
-            throw flowError(
-                'PISTACHIO_ACCOUNT_MISMATCH',
-                'The Gas Assist preview belongs to another wallet.',
-                { stage: 'preview.open' },
-            )
-        }
-        flowEpochRef.current += 1
-        operationRef.current = null
-        sessionTokenRef.current = null
-        setState({ ...initial, open: true, phase: 'review', config, order })
-        gasAssistTrace('flow.preview.opened', {
-            walletAddress,
-            previewId: order.id,
-        })
-    }, [config, walletAddress])
+    }, [beginOperation, buyToken, capability.rawTransactionSigningSupported, config, configError, configStatus, connection.connector?.id, createOrderOverride, finishOperation, grossInputAmount, isCurrent, previewOrder, publishFailure, quoteEndpoint, reviewOrder, sellToken, slippageBps, walletAddress, walletClient])
 
     const signIntent = useCallback(async (action) => {
         const operation = `${action}-intent`
@@ -472,13 +494,6 @@ export function usePrepaidSponsorship({
                 sessionTokenRef.current = sessionToken
             }
             if (order.isPreview === true) {
-                if (typeof createOrderOverride !== 'function') {
-                    throw flowError(
-                        'SPONSORSHIP_CONTEXT_MISSING',
-                        'The exact Gas Assist order cannot be created.',
-                        { stage: 'package.order-create' },
-                    )
-                }
                 order = await gasAssistTraceStep(
                     'flow.order-create',
                     {
@@ -488,15 +503,25 @@ export function usePrepaidSponsorship({
                         grossInputAmount,
                         slippageBps,
                     },
-                    () => createOrderOverride({
-                        sessionToken,
-                        idempotencyKey: createIdempotencyKey(),
-                        walletAddress,
-                        sellToken,
-                        buyToken,
-                        grossInputAmount,
-                        slippageBps,
-                    }),
+                    () => {
+                        const idempotencyKey = createIdempotencyKey()
+                        return typeof createOrderOverride === 'function'
+                            ? createOrderOverride({
+                                sessionToken,
+                                idempotencyKey,
+                                walletAddress,
+                                sellToken,
+                                buyToken,
+                                grossInputAmount,
+                                slippageBps,
+                            })
+                            : createSponsorshipOrder(quoteEndpoint, sessionToken, {
+                                sellToken: sellToken.address,
+                                buyToken: buyToken.isNative ? 'native' : buyToken.address,
+                                grossInputAmount,
+                                slippageBps,
+                            }, idempotencyKey)
+                    },
                 )
                 if (!isCurrent(walletEpoch, flowEpoch)) return
                 setState((current) => ({ ...current, order }))
@@ -766,6 +791,8 @@ export function usePrepaidSponsorship({
         available: Boolean(required && config?.enabled),
         start,
         reviewOrder,
+        openPreviewLoading,
+        failPreview,
         close,
         signPackage,
         signPayment: () => signIntent('payment'),

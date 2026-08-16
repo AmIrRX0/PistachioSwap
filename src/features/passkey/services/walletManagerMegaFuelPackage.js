@@ -137,24 +137,27 @@ export const methods = {
             reviewWalletAddress,
         )
 
-        await this.reviewQueue.request({
-            walletAddress: reviewWalletAddress,
-            chainId: 56,
-            action: 'Confirm Gas Assist swap',
-            payload: {
-                purpose: 'One-time authorization for this exact Gas Assist package',
-                orderId: normalizedPackage.orderId,
-                expiresAt: normalizedPackage.expiresAt,
-                transactions: normalizedPackage.transactions.map((item) => ({
-                    action: item.action,
-                    intentId: item.intentId,
-                    ...describeTransactionReview(item.transaction, 'megafuel'),
-                })),
-            },
-        })
+        const previouslyAuthorized = this.hasActiveGasAssistAuthorization?.() === true
+        if (!previouslyAuthorized) {
+            await this.reviewQueue.request({
+                walletAddress: reviewWalletAddress,
+                chainId: 56,
+                action: 'Confirm Gas Assist swap',
+                payload: {
+                    purpose: 'One-time authorization for this exact Gas Assist package',
+                    orderId: normalizedPackage.orderId,
+                    expiresAt: normalizedPackage.expiresAt,
+                    transactions: normalizedPackage.transactions.map((item) => ({
+                        action: item.action,
+                        intentId: item.intentId,
+                        ...describeTransactionReview(item.transaction, 'megafuel'),
+                    })),
+                },
+            })
+        }
 
-        // The production wallet hardener makes this exactly one fresh passkey
-        // ceremony whether the worker is currently unlocked or must be resumed.
+        // The production hardener keeps key material only for the bounded
+        // authentication-to-package handoff, then clears it after this action.
         await this.ensureUnlockedForSigning()
         const context = this.captureSigningContext(56)
         if (String(context.address).toLowerCase() !== String(reviewWalletAddress).toLowerCase()) {

@@ -397,6 +397,12 @@ export function hardenPistachioWalletManager(manager) {
         this.requireUnlocked()
     }
 
+    // Package signing may omit a second wallet-owned review only while the
+    // strict, wallet-bound Gas Assist authentication flow is still active.
+    // The dapp review opened before authentication is the user approval
+    // boundary; malformed packages are rejected before this is consulted.
+    manager.hasActiveGasAssistAuthorization = () => gasAssistFlowMatches()
+
     manager.lock = async function lock(reason = 'manual', options = {}) {
         clearGasAssistFlow()
         if (reason === 'manual' || SESSION_CLEAR_LOCK_REASONS.has(reason)) {

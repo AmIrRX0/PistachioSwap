@@ -94,8 +94,11 @@ function statusContent({ phase, order, orderExpired }) {
             detail: 'Create a fresh Gas Assist quote to continue.',
         }
     }
+    if (phase === 'preview-loading') {
+        return { title: 'Loading your review', detail: 'Getting the latest route and exact Gas Assist fee.' }
+    }
     if (phase === 'authenticating') {
-        return { title: 'Checking your wallet', detail: 'Confirm the wallet authentication request.' }
+        return { title: 'Confirm with your passkey', detail: 'One passkey check authorizes this exact three-transaction package.' }
     }
     if (phase === 'package-preparing') {
         return { title: 'Preparing your swap', detail: 'Building the exact fee, approval, and swap transactions.' }
@@ -144,6 +147,16 @@ function CompactStatus({ status }) {
                 <p>{status.detail}</p>
             </div>
         </section>
+    )
+}
+
+function ReviewSkeleton() {
+    return (
+        <div className="gas-assist-review-skeleton" role="status" aria-live="polite" aria-label="Loading Gas Assist review">
+            <div className="gas-assist-skeleton-token"><span /><div><i /><b /></div></div>
+            <div className="gas-assist-skeleton-token"><span /><div><i /><b /></div></div>
+            <div className="gas-assist-skeleton-fee"><i /><b /></div>
+        </div>
     )
 }
 
@@ -205,17 +218,19 @@ export default function GasAssistPrepaymentDialog({
 
     useEffect(() => setExpired(false), [order?.expiresAt, order?.id])
 
-    const walletReviewActive = sponsorship.phase === 'authenticating' ||
-        sponsorship.phase.endsWith('-signing')
-    if (!sponsorship.open || walletReviewActive) return null
+    if (!sponsorship.open) return null
 
-    const walletBusy = sponsorship.phase === 'continuation-loading' ||
-        sponsorship.phase.endsWith('-preparing')
+    const walletBusy = sponsorship.phase === 'preview-loading' ||
+        sponsorship.phase === 'authenticating' ||
+        sponsorship.phase === 'continuation-loading' ||
+        sponsorship.phase.endsWith('-preparing') ||
+        sponsorship.phase.endsWith('-signing')
     const waitingForChain = ['payment-confirming', 'approval-confirming', 'swap-confirming'].includes(sponsorship.phase) ||
         ['payment-submitting', 'payment-submitted', 'approval-submitted', 'swap-submitted'].includes(order?.status)
     const orderExpired = expired || Boolean(order?.expiresAt && Date.parse(order.expiresAt) <= Date.now())
     const requiredAction = order?.currentRequiredAction
-    const showPayment = sponsorship.phase === 'review' || requiredAction === 'prepare-payment'
+    const showPayment = sponsorship.phase === 'review' &&
+        (!requiredAction || requiredAction === 'prepare-payment')
     const showApproval = requiredAction === 'prepare-approval'
     const showContinuationRequest = requiredAction === 'prepare-sponsored-swap'
     const showContinuationSign = sponsorship.phase === 'continuation-ready'
@@ -270,6 +285,7 @@ export default function GasAssistPrepaymentDialog({
                         </Dialog.Close>
                     </div>
 
+                    {!order && sponsorship.phase === 'preview-loading' && <ReviewSkeleton />}
                     {order && paymentToken && (
                         <div className="gas-assist-swap-summary">
                             <div className="gas-assist-summary-token">
@@ -295,7 +311,7 @@ export default function GasAssistPrepaymentDialog({
                         </div>
                     )}
 
-                    {status && (sponsorship.phase !== 'review' || orderExpired) && (
+                    {status && !['review', 'preview-loading'].includes(sponsorship.phase) && (
                         <CompactStatus status={status} />
                     )}
                     {visibleError && <GasAssistError error={visibleError} />}

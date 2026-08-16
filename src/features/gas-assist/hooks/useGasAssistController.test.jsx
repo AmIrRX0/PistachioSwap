@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -58,6 +58,7 @@ const baseProps = {
 }
 
 const preview = {
+    grossInputAmountRaw: '51000000',
     netSwapAmountRaw: '50000000',
     paymentAmountRaw: '1000000',
     expectedOutputRaw: '2000000000000000000',
@@ -77,6 +78,8 @@ describe('exact prepaid Gas Assist route ownership', () => {
             config: { enabled: true },
             configStatus: 'success',
             configError: null,
+            start: vi.fn(),
+            reviewOrder: vi.fn(),
         }
         mocks.preview = {
             preview,
@@ -122,6 +125,16 @@ describe('exact prepaid Gas Assist route ownership', () => {
         await waitFor(() => {
             expect(baseProps.setBuyAmount).toHaveBeenCalledWith('2')
         })
+
+        act(() => result.current.prepaidSponsorship.start())
+        expect(mocks.prepaid.reviewOrder).toHaveBeenCalledWith(expect.objectContaining({
+            id: `preview:${preview.expiresAt}`,
+            isPreview: true,
+            walletAddress: baseProps.account,
+            grossInputAmountRaw: baseProps.activeAmountIn,
+            totalPrepaymentUsdMicros: '1000000',
+        }))
+        expect(mocks.prepaid.start).not.toHaveBeenCalled()
     })
 
     it('fails closed without putting backend codes in the customer status area', async () => {

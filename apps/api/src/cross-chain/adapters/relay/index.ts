@@ -106,7 +106,9 @@ export function createRelayAdapter(http: HttpJson = fetchJson): CrossChainAdapte
                 request,
                 capabilities,
             )
-            if (!transactionSteps.length) throw new Error('Relay returned no executable transaction.')
+            const sourceTransaction = transactionSteps.find((step) =>
+                step.type === 'source-transaction')
+            if (!sourceTransaction) throw new Error('Relay returned no executable source transaction.')
             const buyAmount = normalizeUint(currencyOut.amount, 'buy amount')
             const appFee = platformFeeEntry({
                 bps: platformFee.bps,
@@ -129,7 +131,10 @@ export function createRelayAdapter(http: HttpJson = fetchJson): CrossChainAdapte
                 estimatedDurationSeconds: finite(details.timeEstimate ?? payload.timeEstimate),
                 executionModel: 'evm-transaction',
                 steps: transactionSteps.map(({ requestId: _requestId, ...step }) => step),
-                transaction: transactionSteps[0].transaction,
+                // Relay commonly returns an ERC-20 approval first. The quote's
+                // executable transaction must be the deposit/source call;
+                // MegaFuel constructs its own exact approval separately.
+                transaction: sourceTransaction.transaction,
                 deposit: null,
                 statusId: text(
                     transactionSteps.find(({ requestId }) => requestId)?.requestId ??

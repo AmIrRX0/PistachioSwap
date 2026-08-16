@@ -20,6 +20,7 @@ const messages = {
     ACTIVE_ORDER_EXISTS: 'A Gas Assist swap is already active for this wallet.',
     ORDER_REQUOTE_REQUIRED: 'The price changed too much. Refresh and try again.',
     CROSS_CHAIN_SPONSORSHIP_UNSTABLE: 'The exact sponsored route changed. Refresh and try again.',
+    SPONSORED_ACTION_REVERTED: 'This swap could not be simulated. Refresh and try again.',
     SPONSORSHIP_ORDER_FAILED: 'Gas Assist could not complete this swap. Try again.',
     SPONSORED_ROUTE_UNAVAILABLE: 'No safe Gas Assist route is available right now.',
     PRESIGNED_PACKAGE_REQUIRES_UNISWAP: 'This route cannot currently use the one-tap Gas Assist flow.',

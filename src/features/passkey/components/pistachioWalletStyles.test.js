@@ -52,3 +52,16 @@ describe('Pistachio Wallet responsive style contract', () => {
         expect(css).not.toContain('!important')
     })
 })
+
+describe('wallet account signing overlay stacking', () => {
+    it('keeps the passkey approve dialog above Gas Assist review', async () => {
+        const css = await readFile(new URL(
+            '../../wallet/components/wallet/walletAccount.css',
+            import.meta.url,
+        ), 'utf8')
+        expect(css).toContain('z-index: 10020')
+        expect(css).toContain('z-index: 10021')
+        expect(css).not.toContain('z-index: 2200')
+        expect(css).not.toContain('z-index: 2201')
+    })
+})

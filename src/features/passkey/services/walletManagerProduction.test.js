@@ -30,7 +30,27 @@ function authenticationMessage(title) {
     ].join('\n')
 }
 
-function createManager({ withVault = true } = {}) {
+function toHexMessage(message) {
+    return `0x${Array.from(message, (character) => character.charCodeAt(0).toString(16).padStart(2, '0')).join('')}`
+}
+
+function createVisibilityDocument() {
+    const listeners = new Map()
+    return {
+        hidden: false,
+        addEventListener(event, listener) {
+            const set = listeners.get(event) ?? new Set()
+            set.add(listener)
+            listeners.set(event, set)
+        },
+        hide() {
+            this.hidden = true
+            for (const listener of listeners.get('visibilitychange') ?? []) listener()
+        },
+    }
+}
+
+function createManager({ withVault = true, window = null } = {}) {
     const manager = {
         activeChainId: 56,
         activeSessionVaultId: null,
@@ -74,6 +94,9 @@ function createManager({ withVault = true } = {}) {
         sendTransaction: vi.fn(async () => '0xtransaction'),
         sessionActive: false,
         signMegaFuelPackage: vi.fn(async function signMegaFuelPackage(input) {
+            if (this.hasActiveGasAssistAuthorization?.() !== true) {
+                await this.reviewQueue.request()
+            }
             await this.ensureUnlockedForSigning()
             return { orderId: input.orderId, signedTransactions: [] }
         }),
@@ -112,7 +135,7 @@ function createManager({ withVault = true } = {}) {
             ? { address, vaultId: 'vault-1' }
             : null,
         view: 'wallet',
-        window: null,
+        window,
         clearActiveSession: vi.fn(async function clearActiveSession() {
             this.sessionActive = false
             this.activeSessionVaultId = null
@@ -203,6 +226,51 @@ describe('production Pistachio Wallet hardening', () => {
             resumeReauthPending: true,
             sessionActive: true,
         })
+    })
+
+    it('treats hex-encoded personal_sign Gas Assist challenges as the same one-passkey flow', async () => {
+        const manager = createManager()
+        const originalLock = manager.lock
+        const originalUnlock = manager.unlock
+        manager.sessionActive = true
+        hardenPistachioWalletManager(manager)
+
+        await manager.providerRequest({
+            method: 'personal_sign',
+            params: [
+                toHexMessage(authenticationMessage('PistachioSwap Gas Assist Authentication')),
+                address,
+            ],
+        })
+        await expect(manager.signMegaFuelPackage({ orderId: 'order-1' }))
+            .resolves.toEqual({ orderId: 'order-1', signedTransactions: [] })
+
+        expect(manager.reviewQueue.request).not.toHaveBeenCalled()
+        expect(originalUnlock).toHaveBeenCalledOnce()
+        expect(originalLock).toHaveBeenCalledOnce()
+    })
+
+    it('keeps the Gas Assist passkey live when a passkey prompt hides the document', async () => {
+        const documentImpl = createVisibilityDocument()
+        const manager = createManager({ window: { document: documentImpl } })
+        const originalLock = manager.lock
+        manager.sessionActive = true
+        hardenPistachioWalletManager(manager)
+
+        await manager.signMessage({
+            message: authenticationMessage('PistachioSwap Gas Assist Authentication'),
+        })
+        expect(manager.phase).toBe('unlocked')
+
+        documentImpl.hide()
+        expect(originalLock).not.toHaveBeenCalled()
+        expect(manager.phase).toBe('unlocked')
+        expect(manager.hasActiveGasAssistAuthorization()).toBe(true)
+
+        await expect(manager.signMegaFuelPackage({ orderId: 'order-1' }))
+            .resolves.toEqual({ orderId: 'order-1', signedTransactions: [] })
+        expect(manager.reviewQueue.request).not.toHaveBeenCalled()
+        expect(originalLock).toHaveBeenCalledOnce()
     })
 
     it('uses one passkey for the bounded Gas Assist authentication and package flow', async () => {

@@ -1,4 +1,4 @@
-import { getAddress } from 'viem'
+import { getAddress, hexToString, isHex } from 'viem'
 
 const HARDENED_MANAGER = Symbol.for(
     'pistachioswap.pistachio-wallet.production-hardened',
@@ -102,6 +102,17 @@ function readOnlyAccount(manager) {
     return null
 }
 
+function authenticationMessageText(value) {
+    if (typeof value?.message === 'string') return value.message
+    const encoded = value?.messageBytes
+    if (typeof encoded !== 'string' || !isHex(encoded)) return null
+    try {
+        return hexToString(encoded)
+    } catch {
+        return null
+    }
+}
+
 function isGasAssistAuthenticationMessage(
     value,
     {
@@ -110,7 +121,7 @@ function isGasAssistAuthenticationMessage(
         now = Date.now(),
     },
 ) {
-    const message = value?.message
+    const message = authenticationMessageText(value)
     if (typeof message !== 'string' || message.length > MAX_MESSAGE_CHARS) {
         return false
     }
@@ -397,11 +408,14 @@ export function hardenPistachioWalletManager(manager) {
         this.requireUnlocked()
     }
 
-    // Package signing may omit a second wallet-owned review only while the
-    // strict, wallet-bound Gas Assist authentication flow is still active.
-    // The dapp review opened before authentication is the user approval
-    // boundary; malformed packages are rejected before this is consulted.
-    manager.hasActiveGasAssistAuthorization = () => gasAssistFlowMatches()
+    // Package signing may omit a second wallet-owned review while the
+    // dapp Gas Assist confirmation is in flight or the bounded
+    // authentication-to-package handoff is still active. Malformed
+    // packages are rejected before this is consulted.
+    manager.hasActiveGasAssistAuthorization = () => (
+        currentSensitiveActionKind === 'gas-assist-package' ||
+        gasAssistFlowMatches()
+    )
 
     manager.lock = async function lock(reason = 'manual', options = {}) {
         clearGasAssistFlow()
@@ -707,9 +721,16 @@ export function hardenPistachioWalletManager(manager) {
     const documentImpl = manager.window?.document
     if (documentImpl?.addEventListener) {
         documentImpl.addEventListener('visibilitychange', () => {
-            if (documentImpl.hidden && manager.phase === 'unlocked') {
-                void manager.lock('tab-hidden', { broadcast: false })
-            }
+            if (!documentImpl.hidden || manager.phase !== 'unlocked') return
+            // WebAuthn / passkey prompts commonly hide the document. Clearing
+            // the Gas Assist unlock there forces a second Approve + passkey
+            // under the still-open review dialog.
+            if (
+                currentSensitiveActionKind === 'gas-assist-auth' ||
+                currentSensitiveActionKind === 'gas-assist-package' ||
+                gasAssistFlowMatches()
+            ) return
+            void manager.lock('tab-hidden', { broadcast: false })
         })
     }
 

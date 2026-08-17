@@ -429,7 +429,12 @@ async function requestJson(url, options = {}) {
     const response = await fetch(url, options)
     const payload = await response.json().catch(() => null)
     if (!response.ok) {
-        const code = payload?.error?.code ?? null
+        const gatewayTimeout = response.status === 502 ||
+            response.status === 503 ||
+            response.status === 504
+        const code = payload?.error?.code ?? (gatewayTimeout
+            ? 'CROSS_CHAIN_GATEWAY_TIMEOUT'
+            : null)
         const messages = {
             CROSS_CHAIN_NOT_CONFIGURED: 'Cross-chain routing is not configured.',
             CROSS_CHAIN_UNSUPPORTED_CHAIN_PAIR: 'This network pair is not currently supported.',
@@ -442,6 +447,7 @@ async function requestJson(url, options = {}) {
             RELAY_APPROVAL_AMOUNT_INVALID: 'Relay returned an invalid approval amount.',
             RELAY_ROUTE_MALFORMED: 'Relay returned a malformed route.',
             CROSS_CHAIN_NO_EXECUTABLE_ROUTE: 'No executable route is currently available.',
+            CROSS_CHAIN_GATEWAY_TIMEOUT: 'Gas Assist took too long to confirm this route. Try again.',
         }
         const error = new Error(messages[code] ?? payload?.error?.message ??
             payload?.message ?? 'Cross-chain service is unavailable.')

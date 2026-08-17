@@ -20,7 +20,7 @@ import {
 
 type PrivateGasAssistRequest = typeof requestPrivateGasAssist
 
-const CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS = 8
+const CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS = 5
 
 export class CrossChainRouteService {
     constructor(
@@ -315,11 +315,14 @@ export class CrossChainRouteService {
             } catch (error) {
                 if (!(error instanceof PrivateGasAssistError) ||
                     error.code !== 'ORDER_REQUOTE_REQUIRED') throw error
-                const nextAmount = String(
-                    error.details?.expectedNetSwapAmountRaw ?? '',
-                )
-                if (!/^[1-9]\d*$/.test(nextAmount) ||
-                    BigInt(nextAmount) >= BigInt(grossInputAmount) ||
+                const nextAmount = nextSponsoredNetAmount({
+                    grossInputAmount,
+                    currentRouteAmount: candidateRoute.inputAmount,
+                    expectedNetSwapAmount: String(
+                        error.details?.expectedNetSwapAmountRaw ?? '',
+                    ),
+                })
+                if (!nextAmount ||
                     nextAmount === expectedAmount ||
                     attempt === CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS - 1) {
                     throw routeError(
@@ -386,6 +389,27 @@ function sponsoredGrossInputAmount(route: PublicCrossChainRoute) {
         return stamped
     }
     return route.inputAmount
+}
+
+export function nextSponsoredNetAmount({
+    grossInputAmount,
+    currentRouteAmount,
+    expectedNetSwapAmount,
+}: {
+    grossInputAmount: string
+    currentRouteAmount: string
+    expectedNetSwapAmount: string
+}) {
+    if (!/^[1-9]\d*$/.test(expectedNetSwapAmount)) return null
+    const next = BigInt(expectedNetSwapAmount)
+    const gross = BigInt(grossInputAmount)
+    const current = BigInt(currentRouteAmount)
+    if (next >= gross) return null
+    // A net quote that is already at or below the latest expected net is
+    // conservative enough. Chasing a higher net (fee estimate dropped) or
+    // dust-level jitter loops until the gateway times out.
+    if (current < gross && next >= current) return null
+    return expectedNetSwapAmount
 }
 
 function exactSponsoredRoute(

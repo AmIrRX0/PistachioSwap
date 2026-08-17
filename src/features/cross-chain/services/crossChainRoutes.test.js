@@ -426,6 +426,25 @@ describe('cross-chain route normalization', () => {
         vi.unstubAllGlobals()
     })
 
+    it('maps a Cloudflare gateway failure to a retryable preview error', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            ok: false,
+            status: 502,
+            json: async () => {
+                throw new Error('Unexpected token <')
+            },
+        }))
+
+        await expect(previewCrossChainSponsorship({
+            endpoint: 'https://api.example/v1/cross-chain',
+            routeId: 'route-id',
+        })).rejects.toMatchObject({
+            code: 'CROSS_CHAIN_GATEWAY_TIMEOUT',
+            status: 502,
+        })
+        vi.unstubAllGlobals()
+    })
+
     it('signs only the server challenge and returns an in-memory session', async () => {
         const signature = `0x${'12'.repeat(65)}`
         const signMessage = vi.fn().mockResolvedValue(signature)

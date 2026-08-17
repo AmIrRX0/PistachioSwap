@@ -20,6 +20,8 @@ const messages = {
     ACTIVE_ORDER_EXISTS: 'A Gas Assist swap is already active for this wallet.',
     ORDER_REQUOTE_REQUIRED: 'The price changed too much. Refresh and try again.',
     CROSS_CHAIN_SPONSORSHIP_UNSTABLE: 'The exact sponsored route changed. Refresh and try again.',
+    CROSS_CHAIN_GATEWAY_TIMEOUT: 'Gas Assist took too long to confirm this route. Try again.',
+    GAS_ASSIST_UNAVAILABLE: 'Gas Assist is temporarily unavailable. Try again.',
     SPONSORED_ACTION_REVERTED: 'This swap could not be simulated. Refresh and try again.',
     SPONSORED_NATIVE_GAS_CAP_EXCEEDED: 'This route exceeds the sponsored BNB gas-cost limit. Choose a lower-gas route or try again.',
     SPONSORSHIP_ORDER_FAILED: 'Gas Assist could not complete this swap. Try again.',

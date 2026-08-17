@@ -20,7 +20,7 @@ import {
     MemoryCrossChainRouteRepository,
     routeDurationSeconds,
 } from '../src/cross-chain/repository.js'
-import { CrossChainRouteService, routeResponse } from '../src/cross-chain/service.js'
+import { CrossChainRouteService, nextSponsoredNetAmount, routeResponse } from '../src/cross-chain/service.js'
 import type { HttpJson } from '../src/cross-chain/types.js'
 import {
     CrossChainValidationError,
@@ -1505,6 +1505,109 @@ describe('cross-chain backend', () => {
             }),
         }))
         expect(result.order).toMatchObject({ id: 'sponsorship-order' })
+    })
+
+    it('does not chase a higher net after the first sponsored requote', () => {
+        expect(nextSponsoredNetAmount({
+            grossInputAmount: '367000000000000000',
+            currentRouteAmount: '367000000000000000',
+            expectedNetSwapAmount: '304624465860077856',
+        })).toBe('304624465860077856')
+        expect(nextSponsoredNetAmount({
+            grossInputAmount: '367000000000000000',
+            currentRouteAmount: '304624465860077856',
+            expectedNetSwapAmount: '299912025778818537',
+        })).toBe('299912025778818537')
+        expect(nextSponsoredNetAmount({
+            grossInputAmount: '367000000000000000',
+            currentRouteAmount: '299912025778818537',
+            expectedNetSwapAmount: '299915027970418405',
+        })).toBeNull()
+        expect(nextSponsoredNetAmount({
+            grossInputAmount: '367000000000000000',
+            currentRouteAmount: '294616159796651555',
+            expectedNetSwapAmount: '306692975872386842',
+        })).toBeNull()
+    })
+
+    it('stops preview instead of looping when the expected net moves up', async () => {
+        const bscRequest = {
+            ...request,
+            sourceAsset: { ...request.sourceAsset, chainId: 56, decimals: 18 },
+        }
+        const base = fixtureAdapter('across', '900')
+        const adapter = {
+            ...base,
+            getCapabilities: async () => ({
+                provider: 'across' as const,
+                available: true,
+                fetchedAt: new Date().toISOString(),
+                routes: [{
+                    sourceChainId: 56,
+                    destinationChainId: 8453,
+                    transactionTargets: [target],
+                    approvalSpenders: [target],
+                }],
+            }),
+            getQuote: async (quoteRequest: typeof bscRequest) => {
+                const transaction = {
+                    chainId: 56,
+                    to: target,
+                    data: '0x12345678',
+                    value: '0',
+                    allowanceTarget: target,
+                }
+                return {
+                    provider: 'across' as const,
+                    quoteId: `across-${quoteRequest.amount}`,
+                    request: quoteRequest,
+                    buyAmount: quoteRequest.amount,
+                    minimumBuyAmount: quoteRequest.amount,
+                    fees: [],
+                    estimatedDurationSeconds: 30,
+                    executionModel: 'evm-transaction' as const,
+                    steps: [{
+                        id: 'source', index: 0, type: 'source-transaction' as const,
+                        label: 'Submit source', chainId: 56, status: 'ready' as const,
+                        transaction,
+                    }],
+                    transaction,
+                    deposit: null,
+                    statusId: `across-${quoteRequest.amount}`,
+                    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+                }
+            },
+        }
+        const privateRequest = vi.fn(async ({ body }: { body: unknown }) => {
+            const payload = body as { route: { inputAmount: string } }
+            if (payload.route.inputAmount === '1000') {
+                throw new PrivateGasAssistError(
+                    'ORDER_REQUOTE_REQUIRED',
+                    'Requote the net amount.',
+                    409,
+                    { expectedNetSwapAmountRaw: '900' },
+                )
+            }
+            throw new PrivateGasAssistError(
+                'ORDER_REQUOTE_REQUIRED',
+                'Fee estimate dropped.',
+                409,
+                { expectedNetSwapAmountRaw: '905' },
+            )
+        })
+        const service = new CrossChainRouteService(
+            new CrossChainRegistry([adapter]),
+            new MemoryCrossChainRouteRepository(),
+            privateRequest,
+        )
+        const quoted = await service.quote(bscRequest)
+        await expect(service.previewSponsorship({
+            routeId: quoted.selectedRoute.routeId,
+            clientIp: '127.0.0.1',
+        })).rejects.toMatchObject({
+            code: 'CROSS_CHAIN_SPONSORSHIP_UNSTABLE',
+        })
+        expect(privateRequest).toHaveBeenCalledTimes(2)
     })
 
     it('prefers the lower-gas route when destination output is equal', async () => {

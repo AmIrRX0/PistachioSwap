@@ -473,10 +473,10 @@
 .pistachio-wallet-review-body > .pistachio-wallet-review-expiry { color: var(--pw-muted); font-size: 12px; }
 .pistachio-wallet-review-actions { position: sticky; bottom: -28px; margin: 0 -28px -28px; padding: 14px 28px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--pw-border); background: var(--pw-bg); }
 
-.pistachio-session-lock-overlay { z-index: 1020; background: rgb(0 0 0 / 76%); }
+.pistachio-session-lock-overlay { z-index: 10030; background: rgb(0 0 0 / 76%); }
 .pistachio-session-lock-dialog {
     position: fixed;
-    z-index: 1021;
+    z-index: 10031;
     inset: 0;
     display: flex;
     width: min(400px, calc(100vw - 32px));

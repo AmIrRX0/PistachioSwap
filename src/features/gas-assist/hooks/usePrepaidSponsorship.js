@@ -104,6 +104,7 @@ export function usePrepaidSponsorship({
     const operationRef = useRef(null)
     const confirmedOrderIdsRef = useRef(new Set())
     const submittedOrderIdsRef = useRef(new Set())
+    const forceImmediatePollRef = useRef(false)
     const localCapability = useMemo(
         () => detectRawTransactionSigning({ connector: connection.connector, walletClient }),
         [connection.connector, walletClient],
@@ -541,6 +542,12 @@ export function usePrepaidSponsorship({
                 ...current,
                 phase: 'package-signing',
                 intentExpiresAt: preparedPackage.expiresAt,
+                order: current.order
+                    ? {
+                        ...current.order,
+                        expiresAt: preparedPackage.expiresAt ?? current.order.expiresAt,
+                    }
+                    : current.order,
             }))
             await signPreparedSponsoredPackage({
                 transport: capability.transport,
@@ -706,6 +713,8 @@ export function usePrepaidSponsorship({
         if (!state.open || !orderId || state.order?.isPreview === true || !sessionToken ||
             ['completed', 'expired', 'rejected', 'failed'].includes(state.order.status)) return undefined
         const controller = new AbortController()
+        const delay = forceImmediatePollRef.current ? 0 : 3_000
+        forceImmediatePollRef.current = false
         const timer = window.setTimeout(async () => {
             gasAssistTrace('flow.poll.start', { orderId })
             try {
@@ -760,16 +769,32 @@ export function usePrepaidSponsorship({
                     })
                 }
             }
-        }, 3_000)
+        }, delay)
         return () => {
             controller.abort()
             window.clearTimeout(timer)
         }
     }, [isCurrent, onConfirmed, onSubmitted, quoteEndpoint, state.open, state.order, state.pollRevision])
 
+    useEffect(() => {
+        if (!state.open) return undefined
+        const onVisible = () => {
+            if (document.hidden) return
+            forceImmediatePollRef.current = true
+            setState((current) => ({
+                ...current,
+                pollRevision: (current.pollRevision ?? 0) + 1,
+            }))
+        }
+        document.addEventListener('visibilitychange', onVisible)
+        return () => document.removeEventListener('visibilitychange', onVisible)
+    }, [state.open])
+
     const close = useCallback(() => {
         if (state.phase.endsWith('-signing') ||
             state.phase.endsWith('-preparing') ||
+            state.phase.endsWith('-confirming') ||
+            state.phase.endsWith('-submitting') ||
             state.phase === 'authenticating' ||
             state.phase === 'continuation-loading') return
         flowEpochRef.current += 1

@@ -262,6 +262,27 @@ describe('Gas Assist prepayment review', () => {
         expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     })
 
+    it('explains when a route exceeds the stablecoin BNB gas-cost cap', () => {
+        render(<GasAssistPrepaymentDialog
+            sponsorship={sponsorship({
+                phase: 'failed',
+                error: {
+                    code: 'SPONSORED_NATIVE_GAS_CAP_EXCEEDED',
+                    message: 'The quoted transaction exceeds the stablecoin BNB gas-cost cap.',
+                },
+            })}
+            sellToken={sellToken}
+            buyToken={buyToken}
+        />)
+
+        expect(screen.getByText(
+            'This route exceeds the sponsored BNB gas-cost limit. Choose a lower-gas route or try again.',
+        )).toBeTruthy()
+        expect(screen.queryByText(
+            'The quoted transaction exceeds the stablecoin BNB gas-cost cap.',
+        )).toBeNull()
+    })
+
     it('shows a simple error without exposing backend diagnostics in the interface', () => {
         render(<GasAssistPrepaymentDialog
             sponsorship={sponsorship({

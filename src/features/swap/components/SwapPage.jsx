@@ -18,14 +18,6 @@ export default function SwapPage({ toolbar, card, tokenSelector, sameChainReview
         <>
             <PasskeyVaultTestPanel />
             <section className="swap-root">
-                <div className="swap-landing-copy">
-                    <h1>Secure Crypto Wallet for Effortless Asset Management</h1>
-                    <p>
-                        Pistachio Swap is a secure crypto wallet built for simple, confident asset management in your browser.
-                        Connect your wallet, review balances, and swap tokens with a clean interface that keeps control in your hands
-                        while helping you manage crypto assets safely from one modern web app.
-                    </p>
-                </div>
                 <SwapToolbar {...toolbar} />
                 <SwapCard {...card} />
             </section>

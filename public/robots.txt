@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Third-party licence texts are published for compliance, not for search.
+Disallow: /legal/third-party/
+
+Sitemap: https://pistachioswap.com/sitemap.xml

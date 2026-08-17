@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+
 import { defineConfig, loadEnv } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
@@ -21,6 +23,21 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: devApiTarget,
           changeOrigin: true,
+        },
+      },
+    },
+    build: {
+      rollupOptions: {
+        /*
+         * Two entries. `index.html` stays the swap application at `/`, so no
+         * existing link moves. `landing/index.html` builds to
+         * `dist/landing/index.html`, which the existing static host serves
+         * directly — the marketing copy is real HTML rather than something a
+         * crawler has to execute React to see.
+         */
+        input: {
+          main: resolve(import.meta.dirname, 'index.html'),
+          landing: resolve(import.meta.dirname, 'landing/index.html'),
         },
       },
     },

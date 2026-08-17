@@ -11,6 +11,11 @@ const legalLinkStyle = {
     textDecoration: 'none',
 }
 
+const legalSeparatorStyle = {
+    margin: '0 0.5rem',
+    opacity: 0.5,
+}
+
 const coldWalletSectionStyle = {
     marginTop: '0.5rem',
     fontSize: '0.6875rem',
@@ -40,6 +45,15 @@ export default function AppLayout({ style, header, children, overlays }) {
             {children}
             {showLegalFooter && (
                 <footer style={legalFooterStyle}>
+                    {/*
+                      * The overview page is otherwise unreachable from the
+                      * application, which would leave it orphaned for crawlers
+                      * and for anyone wanting to read what this does first.
+                      */}
+                    <a href="/landing/" style={legalLinkStyle}>
+                        About Pistachio Swap
+                    </a>
+                    <span style={legalSeparatorStyle} aria-hidden="true">·</span>
                     <a href="/legal/third-party/" style={legalLinkStyle}>
                         Legal &amp; third-party notices
                     </a>

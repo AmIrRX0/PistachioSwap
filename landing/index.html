@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>What Pistachio Swap does — cross-chain swaps and Gas Assist</title>
+    <meta
+      name="description"
+      content="Pistachio Swap compares same-chain and cross-chain routes across 25 EVM networks, shows every transaction before you sign it, and can sponsor BNB gas so BEP-20 tokens stay tradable when a wallet holds no BNB."
+    />
+    <link rel="canonical" href="https://pistachioswap.com/landing/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#191919" />
+    <meta name="color-scheme" content="dark" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pistachio Swap" />
+    <meta property="og:url" content="https://pistachioswap.com/landing/" />
+    <meta
+      property="og:title"
+      content="What Pistachio Swap does — cross-chain swaps and Gas Assist"
+    />
+    <meta
+      property="og:description"
+      content="Route comparison across 25 EVM networks, a full transaction review before every signature, and Gas Assist for wallets holding BEP-20 tokens but no BNB."
+    />
+    <meta property="og:image" content="https://pistachioswap.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Pistachio Swap" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="What Pistachio Swap does — cross-chain swaps and Gas Assist"
+    />
+    <meta
+      name="twitter:description"
+      content="Route comparison across 25 EVM networks, a full transaction review before every signature, and Gas Assist on BNB Chain."
+    />
+    <meta name="twitter:image" content="https://pistachioswap.com/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://pistachioswap.com/#organization",
+            "name": "Pistachio Swap",
+            "url": "https://pistachioswap.com/",
+            "logo": "https://pistachioswap.com/icons/PistachioLogo.svg"
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://pistachioswap.com/landing/#webpage",
+            "url": "https://pistachioswap.com/landing/",
+            "name": "What Pistachio Swap does",
+            "isPartOf": { "@id": "https://pistachioswap.com/#website" },
+            "about": { "@id": "https://pistachioswap.com/#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Pistachio Swap",
+                "item": "https://pistachioswap.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Overview",
+                "item": "https://pistachioswap.com/landing/"
+              }
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://pistachioswap.com/landing/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Does Pistachio Swap hold my funds?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Pistachio Swap is a self-custodial interface. Tokens stay in your own wallet, and nothing moves until you approve and sign a transaction that the review screen has shown you in full."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is Gas Assist?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A wallet can hold valuable BEP-20 tokens while having no BNB to pay network gas. Gas Assist is built for that case: the backend prepares an exact three-transaction package covering the fee payment, the token approval, and the swap itself. Gas Assist is not free — the network cost, the sponsorship cost, and PistachioSwap fees are disclosed in the quote or review before you sign."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which networks are supported?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Twenty-five curated EVM networks, including Ethereum, BNB Smart Chain, Polygon PoS, Arbitrum One, OP Mainnet, Base, Avalanche, Linea, Scroll, zkSync Era, Mantle, Sonic, Berachain, Unichain, World Chain, Blast, Mode, Metis, Cronos, Moonbeam, Taiko, opBNB, Gnosis Chain, Celo, and Polygon zkEVM. Gas Assist itself runs on BNB Smart Chain."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I have to use Pistachio Wallet?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Any standard EVM wallet connects through the usual wallet flow. Pistachio Wallet is an optional passkey-protected wallet held in your own browser; its private key never leaves the worker that holds it, and every sensitive action requires a fresh passkey check."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Has Pistachio Swap been audited?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Not yet. Pistachio Swap is pre-release software and has not been independently audited. Use a separate wallet and small amounts while development continues."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How are swap routes chosen?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Same-chain quotes are compared across several aggregators, including 0x, KyberSwap, and Uniswap, and the comparison accounts for network cost rather than headline output alone. Cross-chain routes are quoted from Across, deBridge DLN, Relay, Chainflip, and 0x, and the route that nets out best is selected."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
+    <link rel="stylesheet" href="./landing.css" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">
+          <img src="/icons/PistachioLogo.svg" alt="" width="26" height="26" />
+          Pistachio Swap
+        </a>
+        <nav class="header-nav" aria-label="Page sections">
+          <a href="#how">How it works</a>
+          <a href="#gas-assist">Gas Assist</a>
+          <a href="#networks">Networks</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a class="button button-primary" href="/">Open the app</a>
+      </header>
+    </div>
+
+    <main id="main">
+      <div class="shell">
+        <section class="hero">
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Pre-release · not yet audited</p>
+          <h1>Swap across chains <em>without losing sight of the transaction</em></h1>
+          <p class="hero-lede">
+            Pistachio Swap compares same-chain and cross-chain routes across 25 EVM
+            networks, shows you the exact destination, calldata, spender and amount
+            before anything is signed, and keeps your keys in your own wallet.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary button-lg" href="/">Open the app</a>
+            <a class="button button-ghost button-lg" href="#how">See how it works</a>
+          </div>
+          <p class="hero-note">Self-custodial · no account · no email</p>
+        </section>
+
+        <dl class="stats">
+          <div class="stat">
+            <dt>EVM networks</dt>
+            <dd>25</dd>
+          </div>
+          <div class="stat">
+            <dt>Cross-chain providers</dt>
+            <dd>5</dd>
+          </div>
+          <div class="stat">
+            <dt>Custody of your keys</dt>
+            <dd>Yours</dd>
+          </div>
+          <div class="stat">
+            <dt>Signatures without review</dt>
+            <dd>0</dd>
+          </div>
+        </dl>
+
+        <section class="section" id="how">
+          <div class="section-head">
+            <h2>Built around the moment you press sign</h2>
+            <p>
+              Most losses in a swap interface happen in the last two seconds — the
+              wrong spender, an allowance that never expires, a token whose name is
+              not the token you think it is. Those are the parts we work on hardest.
+            </p>
+          </div>
+
+          <div class="cards">
+            <article class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                </svg>
+              </span>
+              <h3>Every transaction, in full</h3>
+              <p>
+                The review screen names the destination, the spender, the exact
+                amount and the calldata before you approve. Signed transactions are
+                re-parsed and checked against what you reviewed before they are
+                broadcast.
+              </p>
+            </article>
+
+            <article class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12h18" />
+                  <path d="m14 5 7 7-7 7" />
+                  <path d="M10 19 3 12l7-7" />
+                </svg>
+              </span>
+              <h3>Routes compared on net output</h3>
+              <p>
+                Quotes from several aggregators and bridges are compared after
+                network cost, not on the headline number. You see the minimum you
+                will receive and the maximum you will pay before committing.
+              </p>
+            </article>
+
+            <article class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5" />
+                  <path d="M12 16h.01" />
+                </svg>
+              </span>
+              <h3>Unknown tokens stay unknown</h3>
+              <p>
+                Token names and symbols come from arbitrary contracts, so a symbol
+                that uses lookalike characters is never rendered as if it were the
+                real thing. Unverified holdings are separated from the rest and
+                priced conservatively.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="gas-assist">
+          <div class="section-head">
+            <h2>Gas Assist: tokens you cannot move</h2>
+            <p>
+              A wallet can hold valuable BEP-20 tokens and still be stuck, because
+              paying for gas needs BNB it does not have. Gas Assist exists for
+              exactly that failure.
+            </p>
+          </div>
+
+          <div class="split">
+            <ol class="steps">
+              <li>
+                <strong>The package is prepared</strong>
+                <span>
+                  For an eligible prepaid swap the backend builds an exact
+                  three-transaction package: the fee payment, the exact token
+                  approval, and the exact swap.
+                </span>
+              </li>
+              <li>
+                <strong>You review it once</strong>
+                <span>
+                  All three are shown together, with the exact fee and the minimum
+                  output, before a single signature is requested.
+                </span>
+              </li>
+              <li>
+                <strong>One authorization signs all three</strong>
+                <span>
+                  With Pistachio Wallet the package is authorized through one review
+                  and one fresh passkey ceremony. Each transaction is signed locally
+                  and validated after signing.
+                </span>
+              </li>
+              <li>
+                <strong>Partial packages are never submitted</strong>
+                <span>
+                  Any mismatch — a changed account, nonce, chain, expiry or rewritten
+                  transaction — aborts the whole package.
+                </span>
+              </li>
+            </ol>
+
+            <aside class="callout">
+              <h3>Gas Assist is not described as free</h3>
+              <p>
+                The network cost, the sponsorship cost and PistachioSwap fees are
+                disclosed by the quote or the review flow before you sign anything.
+              </p>
+              <p>
+                Availability depends on token eligibility, provider support,
+                liquidity, policy limits and backend configuration. When a route is
+                not eligible the interface says so rather than failing silently.
+              </p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="networks">
+          <div class="section-head">
+            <h2>Twenty-five curated EVM networks</h2>
+            <p>
+              Networks are an explicit allowlist rather than anything a response can
+              introduce. Gas Assist itself runs on BNB Smart Chain.
+            </p>
+          </div>
+
+          <div class="chips">
+            <span class="chip">Ethereum</span>
+            <span class="chip">BNB Smart Chain</span>
+            <span class="chip">Polygon PoS</span>
+            <span class="chip">Arbitrum One</span>
+            <span class="chip">OP Mainnet</span>
+            <span class="chip">Base</span>
+            <span class="chip">Avalanche</span>
+            <span class="chip">Celo</span>
+            <span class="chip">Gnosis Chain</span>
+            <span class="chip">Linea</span>
+            <span class="chip">Scroll</span>
+            <span class="chip">zkSync Era</span>
+            <span class="chip">Mantle</span>
+            <span class="chip">Sonic</span>
+            <span class="chip">Berachain</span>
+            <span class="chip">Unichain</span>
+            <span class="chip">World Chain</span>
+            <span class="chip">Blast</span>
+            <span class="chip">Mode</span>
+            <span class="chip">Metis Andromeda</span>
+            <span class="chip">Cronos</span>
+            <span class="chip">Moonbeam</span>
+            <span class="chip">Taiko</span>
+            <span class="chip">opBNB</span>
+            <span class="chip">Polygon zkEVM</span>
+          </div>
+
+          <p class="providers">
+            Cross-chain routes are quoted from Across, deBridge DLN, Relay, Chainflip
+            and 0x. Same-chain quotes are compared across 0x, KyberSwap and Uniswap.
+          </p>
+        </section>
+
+        <section class="section" id="wallet">
+          <div class="section-head">
+            <h2>Bring your own wallet — or use the one in your browser</h2>
+            <p>
+              Any standard EVM wallet connects the usual way. Pistachio Wallet is
+              optional.
+            </p>
+          </div>
+
+          <div class="cards">
+            <article class="card">
+              <h3>Keys never leave the worker</h3>
+              <p>
+                Pistachio Wallet holds its private key inside a dedicated worker and
+                wipes it on lock. Vaults are stored as AES-256-GCM ciphertext, keyed
+                from a passkey, and bound to this site's origin.
+              </p>
+            </article>
+            <article class="card">
+              <h3>A fresh check for every sensitive action</h3>
+              <p>
+                Signing, revealing a recovery phrase and exporting a key each require
+                a new passkey ceremony. The wallet re-verifies the account and chain
+                after every asynchronous step and fails closed on a mismatch.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Recovery stays in your hands</h3>
+              <p>
+                Export an encrypted backup or a recovery phrase whenever you want.
+                Removing a wallet from this browser does not delete it from any
+                network.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="faq">
+          <div class="section-head">
+            <h2>Questions</h2>
+          </div>
+
+          <div class="faq">
+            <details>
+              <summary>Does Pistachio Swap hold my funds?</summary>
+              <div>
+                <p>
+                  No. Pistachio Swap is a self-custodial interface. Tokens stay in
+                  your own wallet, and nothing moves until you approve and sign a
+                  transaction that the review screen has shown you in full.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>What is Gas Assist?</summary>
+              <div>
+                <p>
+                  A wallet can hold valuable BEP-20 tokens while having no BNB to pay
+                  network gas. Gas Assist is built for that case: the backend
+                  prepares an exact three-transaction package covering the fee
+                  payment, the token approval, and the swap itself.
+                </p>
+                <p>
+                  Gas Assist is not free. The network cost, the sponsorship cost and
+                  PistachioSwap fees are disclosed in the quote or review before you
+                  sign.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>Which networks are supported?</summary>
+              <div>
+                <p>
+                  Twenty-five curated EVM networks, listed above. Gas Assist itself
+                  runs on BNB Smart Chain.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>Do I have to use Pistachio Wallet?</summary>
+              <div>
+                <p>
+                  No. Any standard EVM wallet connects through the usual wallet flow.
+                  Pistachio Wallet is an optional passkey-protected wallet held in
+                  your own browser; its private key never leaves the worker that
+                  holds it, and every sensitive action requires a fresh passkey
+                  check.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>Has Pistachio Swap been audited?</summary>
+              <div>
+                <p>
+                  Not yet. Pistachio Swap is pre-release software and has not been
+                  independently audited. Use a separate wallet and small amounts
+                  while development continues.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>How are swap routes chosen?</summary>
+              <div>
+                <p>
+                  Same-chain quotes are compared across several aggregators,
+                  including 0x, KyberSwap and Uniswap, and the comparison accounts
+                  for network cost rather than headline output alone.
+                </p>
+                <p>
+                  Cross-chain routes are quoted from Across, deBridge DLN, Relay,
+                  Chainflip and 0x, and the route that nets out best is selected.
+                </p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="disclosure" aria-labelledby="risk">
+          <h2 id="risk">Before you use it</h2>
+          <p>
+            Pistachio Swap is pre-release software. It has not been independently
+            audited and should not be treated as production-ready financial
+            infrastructure. Swapping tokens carries risk, including permanent loss.
+            Use separate wallets and small amounts while development continues.
+          </p>
+        </section>
+
+        <section class="cta">
+          <h2>Open it and look around</h2>
+          <p>
+            No account, no email, no deposit. Connect a wallet only when you actually
+            want to trade.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary button-lg" href="/">Open the app</a>
+            <a
+              class="button button-ghost button-lg"
+              href="https://github.com/parsij/PistachioSwap"
+              rel="noopener"
+            >Read the source</a>
+          </div>
+        </section>
+      </div>
+
+      <div class="shell">
+        <footer class="site-footer">
+          <div class="footer-row">
+            <span>© Pistachio Swap</span>
+            <nav class="footer-links" aria-label="Footer">
+              <a href="/">Swap</a>
+              <a href="https://github.com/parsij/PistachioSwap" rel="noopener">GitHub</a>
+              <a href="/legal/third-party/">Legal &amp; third-party notices</a>
+            </nav>
+          </div>
+          <div class="cold-wallets">
+            <p>Pistachio Swap cold wallets:</p>
+            <p>
+              Cold Wallet 1 —
+              <code>0x2941909551C7ceFd9EbEB1C5200D8B614CF887Ca</code>
+            </p>
+          </div>
+        </footer>
+      </div>
+    </main>
+  </body>
+</html>

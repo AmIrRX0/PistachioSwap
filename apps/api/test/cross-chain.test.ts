@@ -735,6 +735,8 @@ describe('cross-chain backend', () => {
             '65000',
         ])
         expect(relayBody!.appFees).toEqual([{ recipient: sender, fee: '45' }])
+        expect(relayBody!.ttl).toBe(900)
+        expect(Date.parse(quote.expiresAt) - Date.now()).toBeGreaterThan(14 * 60_000)
         expect(quote.fees.filter(({ type }) => type === 'platform')).toEqual([
             expect.objectContaining({ amount: '4' }),
         ])

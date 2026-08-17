@@ -49,6 +49,13 @@ export type ProviderStatusUpdate = {
  * completed transfer still gets an answer after the quote itself expired.
  */
 const RETENTION_MS = 15 * 60 * 1000
+const MAX_ROUTE_DURATION_SECONDS = 30 * 24 * 60 * 60
+
+export function routeDurationSeconds(value: unknown) {
+    const parsed = typeof value === 'number' ? value : Number(value)
+    if (!Number.isFinite(parsed) || parsed <= 0) return 0
+    return Math.min(Math.round(parsed), MAX_ROUTE_DURATION_SECONDS)
+}
 
 export class MemoryCrossChainRouteRepository implements CrossChainRouteRepository {
     private readonly routes = new Map<string, PublicCrossChainRoute>()
@@ -194,39 +201,69 @@ export class MemoryCrossChainRouteRepository implements CrossChainRouteRepositor
 class PostgresCrossChainRouteRepository implements CrossChainRouteRepository {
     async create(quote: CrossChainQuote) {
         const db = getDatabase()
-        return db.transaction(async (tx) => {
-            const [row] = await tx.insert(crossChainRoutes).values({
-                quoteId: quote.quoteId,
-                ownerAddress: quote.request.ownerAddress,
-                providerId: quote.provider,
-                executionModel: quote.executionModel,
-                sourceAsset: quote.request.sourceAsset,
-                destinationAsset: quote.request.destinationAsset,
-                recipient: quote.request.recipient,
-                inputAmount: quote.request.amount,
-                outputAmount: quote.buyAmount,
-                minimumOutputAmount: quote.minimumBuyAmount,
-                durationSeconds: quote.estimatedDurationSeconds ?? 0,
-                providerTrackingId: quote.statusId,
-                expiresAt: new Date(quote.expiresAt),
-                publicData: {
-                    costs: normalizePublicCosts(quote.costs),
-                    feeIncluded: quote.feeIncluded === true,
-                    costBreakdownAvailable: quote.costBreakdownAvailable === true,
-                    sponsoredGrossInputAmount: quote.sponsoredGrossInputAmount ?? null,
-                },
-            }).returning()
-            const steps = await tx.insert(crossChainRouteSteps).values(quote.steps.map((step) => ({
-                routeId: row.id,
-                stepIndex: step.index,
-                stepType: step.type,
-                label: step.label,
-                chainId: step.chainId,
-                status: step.status,
-                publicData: {},
-            }))).returning()
-            return rowToPublic(row, steps)
-        })
+        try {
+            return await db.transaction(async (tx) => {
+                const [row] = await tx.insert(crossChainRoutes).values({
+                    quoteId: quote.quoteId,
+                    ownerAddress: quote.request.ownerAddress,
+                    providerId: quote.provider,
+                    executionModel: quote.executionModel,
+                    sourceAsset: quote.request.sourceAsset,
+                    destinationAsset: quote.request.destinationAsset,
+                    recipient: quote.request.recipient,
+                    inputAmount: quote.request.amount,
+                    outputAmount: quote.buyAmount,
+                    minimumOutputAmount: quote.minimumBuyAmount,
+                    durationSeconds: routeDurationSeconds(quote.estimatedDurationSeconds),
+                    providerTrackingId: quote.statusId,
+                    expiresAt: new Date(quote.expiresAt),
+                    publicData: {
+                        costs: normalizePublicCosts(quote.costs),
+                        feeIncluded: quote.feeIncluded === true,
+                        costBreakdownAvailable: quote.costBreakdownAvailable === true,
+                        sponsoredGrossInputAmount: quote.sponsoredGrossInputAmount ?? null,
+                    },
+                }).onConflictDoNothing({
+                    target: crossChainRoutes.quoteId,
+                }).returning()
+                const stored = row ?? (await tx.select().from(crossChainRoutes)
+                    .where(eq(crossChainRoutes.quoteId, quote.quoteId))
+                    .limit(1))[0]
+                if (!stored) {
+                    throw routeError(
+                        'ROUTE_STORE_FAILED',
+                        'The quoted route could not be stored.',
+                        503,
+                    )
+                }
+                if (!row) {
+                    const steps = await tx.select().from(crossChainRouteSteps)
+                        .where(eq(crossChainRouteSteps.routeId, stored.id))
+                        .orderBy(asc(crossChainRouteSteps.stepIndex))
+                    return rowToPublic(stored, steps)
+                }
+                const steps = await tx.insert(crossChainRouteSteps).values(quote.steps.map((step) => ({
+                    routeId: stored.id,
+                    stepIndex: step.index,
+                    stepType: step.type,
+                    label: step.label,
+                    chainId: step.chainId,
+                    status: step.status,
+                    publicData: {},
+                }))).returning()
+                return rowToPublic(stored, steps)
+            })
+        } catch (error) {
+            if (error && typeof error === 'object' && 'code' in error &&
+                error.code === 'ROUTE_STORE_FAILED') {
+                throw error
+            }
+            throw routeError(
+                'ROUTE_STORE_FAILED',
+                'The quoted route could not be stored.',
+                503,
+            )
+        }
     }
 
     async get(routeId: string) {
@@ -384,7 +421,7 @@ function toPublicRoute(quote: CrossChainQuote, routeId: string, now: string): Pu
         costs: normalizePublicCosts(quote.costs),
         feeIncluded: quote.feeIncluded === true,
         costBreakdownAvailable: quote.costBreakdownAvailable === true,
-        durationSeconds: quote.estimatedDurationSeconds ?? 0,
+        durationSeconds: routeDurationSeconds(quote.estimatedDurationSeconds),
         status: 'quoted',
         providerStatus: null,
         providerTrackingId: quote.statusId,

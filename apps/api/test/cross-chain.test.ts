@@ -16,7 +16,10 @@ import { createZeroXCrossChainAdapter } from '../src/cross-chain/adapters/zero-x
 import { createCrossChainAuthService } from '../src/cross-chain/auth.js'
 import { CrossChainRegistry } from '../src/cross-chain/registry.js'
 import { getPlatformFeeConfiguration } from '../src/cross-chain/fees.js'
-import { MemoryCrossChainRouteRepository } from '../src/cross-chain/repository.js'
+import {
+    MemoryCrossChainRouteRepository,
+    routeDurationSeconds,
+} from '../src/cross-chain/repository.js'
 import { CrossChainRouteService, routeResponse } from '../src/cross-chain/service.js'
 import type { HttpJson } from '../src/cross-chain/types.js'
 import {
@@ -149,6 +152,23 @@ describe('cross-chain backend', () => {
                 confidence: 'quote',
             },
         })
+    })
+
+    it('stores fractional provider ETAs as whole seconds', async () => {
+        expect(routeDurationSeconds(3.5)).toBe(4)
+        expect(routeDurationSeconds(0)).toBe(0)
+        expect(routeDurationSeconds(null)).toBe(0)
+        const route = await new MemoryCrossChainRouteRepository().create(
+            fixtureQuote({ estimatedDurationSeconds: 3.5 }),
+        )
+        expect(route.durationSeconds).toBe(4)
+    })
+
+    it('returns the stored route when the same quote is created twice', async () => {
+        const repository = new MemoryCrossChainRouteRepository()
+        const first = await repository.create(fixtureQuote({ quoteId: 'same-quote' }))
+        const second = await repository.create(fixtureQuote({ quoteId: 'same-quote' }))
+        expect(second.routeId).toBe(first.routeId)
     })
 
     it('fails closed when the in-memory route fallback reaches capacity', async () => {

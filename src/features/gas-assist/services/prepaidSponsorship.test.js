@@ -73,6 +73,19 @@ describe('prepaid sponsorship frontend trust boundary', () => {
             })
     })
 
+    it('maps Cloudflare HTML timeouts to a retryable gateway error', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html>502 Bad Gateway</html>', {
+            status: 502,
+            headers: { 'content-type': 'text/html' },
+        }))
+
+        await expect(fetchSponsorshipConfig('http://localhost:3001/v1/quote'))
+            .rejects.toMatchObject({
+                code: 'CROSS_CHAIN_GATEWAY_TIMEOUT',
+                status: 502,
+            })
+    })
+
     it('reports malformed successful JSON responses instead of returning null', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html>broken</html>', {
             status: 200,

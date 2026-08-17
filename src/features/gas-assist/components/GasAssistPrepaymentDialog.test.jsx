@@ -186,6 +186,29 @@ describe('Gas Assist prepayment review', () => {
         expect(value.retryStart).toHaveBeenCalledOnce()
     })
 
+    it('does not abandon a live signed package when the original quote clock lapses', () => {
+        const refreshQuote = vi.fn()
+        render(<GasAssistPrepaymentDialog
+            sponsorship={sponsorship({
+                phase: 'payment-confirming',
+                refreshQuote,
+                order: {
+                    ...sponsorship().order,
+                    preSignedPackage: true,
+                    status: 'payment-submitted',
+                    expiresAt: new Date(Date.now() - 1_000).toISOString(),
+                },
+            })}
+            sellToken={sellToken}
+            buyToken={buyToken}
+        />)
+
+        expect(screen.getByText('Starting your gasless swap')).toBeTruthy()
+        expect(screen.queryByText('Quote expired')).toBeNull()
+        expect(screen.queryByRole('button', { name: 'Refresh quote' })).toBeNull()
+        expect(screen.getByRole('button', { name: 'Close' }).disabled).toBe(true)
+    })
+
     it('refreshes an expired quote instead of presenting a generic retry', () => {
         const refreshQuote = vi.fn()
         const value = sponsorship({

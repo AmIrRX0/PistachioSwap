@@ -60,9 +60,14 @@ async function requestJson(url, options = {}, stage = 'sponsorship.request') {
         try {
             payload = JSON.parse(text)
         } catch (cause) {
+            const gatewayTimeout = [502, 503, 504].includes(response.status)
             const error = sponsorshipError(
-                'SPONSORSHIP_INVALID_RESPONSE',
-                'Gas Assist returned an unreadable response.',
+                gatewayTimeout
+                    ? 'CROSS_CHAIN_GATEWAY_TIMEOUT'
+                    : 'SPONSORSHIP_INVALID_RESPONSE',
+                gatewayTimeout
+                    ? 'Gas Assist took too long to confirm this route. Try again.'
+                    : 'Gas Assist returned an unreadable response.',
                 {
                     stage,
                     method,
@@ -80,8 +85,12 @@ async function requestJson(url, options = {}, stage = 'sponsorship.request') {
     }
 
     if (!response.ok) {
-        const error = sponsorshipError(
-            payload?.error?.code ?? 'SPONSORSHIP_FAILED',
+            const gatewayTimeout = !payload?.error?.code &&
+                [502, 503, 504].includes(response.status)
+            const error = sponsorshipError(
+                gatewayTimeout
+                    ? 'CROSS_CHAIN_GATEWAY_TIMEOUT'
+                    : payload?.error?.code ?? 'SPONSORSHIP_FAILED',
             payload?.error?.message ?? `Gas Assist request failed with HTTP ${response.status}.`,
             {
                 stage,

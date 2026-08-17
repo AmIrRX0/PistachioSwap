@@ -87,6 +87,29 @@ function providerFeeRows(fees) {
     })
 }
 
+function packageExecutionInFlight(phase, order) {
+    if (order?.preSignedPackage) return true
+    return [
+        'package-preparing',
+        'package-signing',
+        'payment-confirming',
+        'payment-submitting',
+        'approval-confirming',
+        'swap-confirming',
+        'continuation-loading',
+        'continuation-ready',
+        'swap-signing',
+    ].includes(phase) || [
+        'payment-prepared',
+        'payment-submitting',
+        'payment-submitted',
+        'payment-confirmed',
+        'approval-submitted',
+        'approval-confirmed',
+        'swap-submitted',
+    ].includes(order?.status)
+}
+
 function statusContent({ phase, order, orderExpired }) {
     if (orderExpired) {
         return {
@@ -229,7 +252,8 @@ export default function GasAssistPrepaymentDialog({
         sponsorship.phase.endsWith('-signing')
     const waitingForChain = ['payment-confirming', 'approval-confirming', 'swap-confirming'].includes(sponsorship.phase) ||
         ['payment-submitting', 'payment-submitted', 'approval-submitted', 'swap-submitted'].includes(order?.status)
-    const orderExpired = expired || Boolean(order?.expiresAt && Date.parse(order.expiresAt) <= Date.now())
+    const orderExpired = !packageExecutionInFlight(sponsorship.phase, order) &&
+        (expired || Boolean(order?.expiresAt && Date.parse(order.expiresAt) <= Date.now()))
     const requiredAction = order?.currentRequiredAction
     const showPayment = sponsorship.phase === 'review' &&
         (!requiredAction || requiredAction === 'prepare-payment')
@@ -268,7 +292,7 @@ export default function GasAssistPrepaymentDialog({
         : 'Try again'
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && sponsorship.close()}>
+        <Dialog.Root open onOpenChange={(open) => !open && !walletBusy && !waitingForChain && sponsorship.close()}>
             <Dialog.Portal>
                 <Dialog.Overlay className="gas-assist-overlay" />
                 <Dialog.Content className="gas-assist-dialog gas-assist-prepayment-dialog">
@@ -281,7 +305,7 @@ export default function GasAssistPrepaymentDialog({
                                 : 'PistachioSwap covers the network fee and deducts one clear fee from your sell token.'}</Dialog.Description>
                         </div>
                         <Dialog.Close asChild>
-                            <button className="gas-assist-close" type="button" disabled={walletBusy} aria-label="Close">
+                            <button className="gas-assist-close" type="button" disabled={walletBusy || waitingForChain} aria-label="Close">
                                 <X aria-hidden="true" />
                             </button>
                         </Dialog.Close>

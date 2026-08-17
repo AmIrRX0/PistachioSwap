@@ -33,6 +33,8 @@ describe('Pistachio Wallet responsive style contract', () => {
     it('defines a calm full-screen lock state above the application', async () => {
         const css = await readFile(new URL('./pistachioWallet.css', import.meta.url), 'utf8')
         expect(css).toContain('.pistachio-session-lock-overlay')
+        expect(css).toContain('z-index: 10030')
+        expect(css).toContain('z-index: 10031')
         expect(css).toContain('background: rgb(0 0 0 / 76%)')
         expect(css).toContain('.pistachio-session-lock-dialog')
         expect(css).toContain('.pistachio-session-unlock-button')

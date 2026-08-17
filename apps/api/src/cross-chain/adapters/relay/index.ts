@@ -26,6 +26,8 @@ import {
     subtractUsdDecimal,
 } from '../../costs.js'
 
+export const RELAY_QUOTE_TTL_SECONDS = 15 * 60
+
 export function createRelayAdapter(http: HttpJson = fetchJson): CrossChainAdapter {
     const config = getApiConfig().crossChain
     const provider = config.relay
@@ -87,6 +89,7 @@ export function createRelayAdapter(http: HttpJson = fetchJson): CrossChainAdapte
                     amount: request.amount,
                     tradeType: 'EXACT_INPUT',
                     slippageTolerance: String(request.slippageBps),
+                    ttl: RELAY_QUOTE_TTL_SECONDS,
                     ...(platformFee.bps > 0
                         ? {
                               appFees: [{
@@ -518,7 +521,11 @@ function finite(value: unknown) {
 function expiration(payload: Record<string, unknown>) {
     const raw = payload.expiresAt ?? payload.expiration
     const parsed = typeof raw === 'string' ? Date.parse(raw) : Number(raw) * 1000
-    return new Date(Number.isFinite(parsed) && parsed > Date.now() ? parsed : Date.now() + 60_000).toISOString()
+    return new Date(
+        Number.isFinite(parsed) && parsed > Date.now()
+            ? parsed
+            : Date.now() + RELAY_QUOTE_TTL_SECONDS * 1_000,
+    ).toISOString()
 }
 function parseFees(value: unknown, token: string) {
     if (!isRecord(value)) return []

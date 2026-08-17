@@ -20,6 +20,8 @@ import {
 
 type PrivateGasAssistRequest = typeof requestPrivateGasAssist
 
+const CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS = 8
+
 export class CrossChainRouteService {
     constructor(
         private readonly registry = new CrossChainRegistry(),
@@ -229,20 +231,24 @@ export class CrossChainRouteService {
             )
         }
 
-        const grossInputAmount = originalRoute.inputAmount
-        let expectedAmount = grossInputAmount
+        const grossInputAmount = sponsoredGrossInputAmount(originalRoute)
+        let expectedAmount = originalRoute.inputAmount
+        if (BigInt(expectedAmount) > BigInt(grossInputAmount)) {
+            expectedAmount = grossInputAmount
+        }
         let candidateRoute = originalRoute
         let candidateQuote = await this.registry.prepare(
             originalRoute.quoteId,
             signal,
         )
 
-        for (let attempt = 0; attempt < 4; attempt += 1) {
+        for (let attempt = 0; attempt < CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS; attempt += 1) {
             if (attempt > 0) {
                 const quote = await this.registry.requoteProvider(
-                    originalRoute.quoteId,
+                    candidateQuote.quoteId,
                     expectedAmount,
                     signal,
+                    grossInputAmount,
                 )
                 candidateRoute = await this.repository.create(quote)
                 candidateRoute = await this.repository.markPrepared(
@@ -314,7 +320,8 @@ export class CrossChainRouteService {
                 )
                 if (!/^[1-9]\d*$/.test(nextAmount) ||
                     BigInt(nextAmount) >= BigInt(grossInputAmount) ||
-                    nextAmount === expectedAmount || attempt === 3) {
+                    nextAmount === expectedAmount ||
+                    attempt === CROSS_CHAIN_SPONSORSHIP_STABILIZE_ATTEMPTS - 1) {
                     throw routeError(
                         'CROSS_CHAIN_SPONSORSHIP_UNSTABLE',
                         'The exact sponsored route could not be stabilized.',
@@ -370,6 +377,15 @@ export class CrossChainRouteService {
             )
         }
     }
+}
+
+function sponsoredGrossInputAmount(route: PublicCrossChainRoute) {
+    const stamped = route.sponsoredGrossInputAmount
+    if (stamped && /^[1-9]\d*$/.test(stamped) &&
+        BigInt(stamped) >= BigInt(route.inputAmount)) {
+        return stamped
+    }
+    return route.inputAmount
 }
 
 function exactSponsoredRoute(

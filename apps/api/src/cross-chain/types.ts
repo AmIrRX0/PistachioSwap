@@ -120,6 +120,7 @@ export type CrossChainQuote = {
     } | null
     statusId: string | null
     expiresAt: string
+    sponsoredGrossInputAmount?: string
 }
 
 export type CrossChainStep = {
@@ -174,6 +175,7 @@ export type PublicCrossChainRoute = {
     destinationAsset: CrossChainAsset
     recipient: string
     inputAmount: string
+    sponsoredGrossInputAmount: string | null
     outputAmount: string
     minimumOutputAmount: string
     feeAmountUsd: string | null

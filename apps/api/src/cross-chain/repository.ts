@@ -213,6 +213,7 @@ class PostgresCrossChainRouteRepository implements CrossChainRouteRepository {
                     costs: normalizePublicCosts(quote.costs),
                     feeIncluded: quote.feeIncluded === true,
                     costBreakdownAvailable: quote.costBreakdownAvailable === true,
+                    sponsoredGrossInputAmount: quote.sponsoredGrossInputAmount ?? null,
                 },
             }).returning()
             const steps = await tx.insert(crossChainRouteSteps).values(quote.steps.map((step) => ({
@@ -376,6 +377,7 @@ function toPublicRoute(quote: CrossChainQuote, routeId: string, now: string): Pu
         destinationAsset: quote.request.destinationAsset,
         recipient: quote.request.recipient,
         inputAmount: quote.request.amount,
+        sponsoredGrossInputAmount: quote.sponsoredGrossInputAmount ?? null,
         outputAmount: quote.buyAmount,
         minimumOutputAmount: quote.minimumBuyAmount,
         feeAmountUsd: null,
@@ -421,6 +423,7 @@ function rowToPublic(
         destinationAsset: row.destinationAsset as PublicCrossChainRoute['destinationAsset'],
         recipient: row.recipient,
         inputAmount: row.inputAmount,
+        sponsoredGrossInputAmount: sponsoredGrossFromPublicData(publicData),
         outputAmount: row.outputAmount,
         minimumOutputAmount: row.minimumOutputAmount,
         feeAmountUsd: row.feeAmountUsd,
@@ -450,6 +453,11 @@ function rowToPublic(
             transaction: null,
         })),
     }
+}
+
+function sponsoredGrossFromPublicData(publicData: Record<string, unknown>) {
+    const value = publicData.sponsoredGrossInputAmount
+    return typeof value === 'string' && /^[1-9]\d*$/.test(value) ? value : null
 }
 
 function clone(route: PublicCrossChainRoute): PublicCrossChainRoute {

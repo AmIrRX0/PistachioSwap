@@ -1385,6 +1385,143 @@ describe('cross-chain backend', () => {
         expect(result.preparedRoute.transaction.value).toBe('0')
     })
 
+    it('keeps the original gross when creating an order from a preview net route', async () => {
+        const bscRequest = {
+            ...request,
+            sourceAsset: { ...request.sourceAsset, chainId: 56, decimals: 18 },
+        }
+        const base = fixtureAdapter('across', '900')
+        const adapter = {
+            ...base,
+            getCapabilities: async () => ({
+                provider: 'across' as const,
+                available: true,
+                fetchedAt: new Date().toISOString(),
+                routes: [{
+                    sourceChainId: 56,
+                    destinationChainId: 8453,
+                    transactionTargets: [target],
+                    approvalSpenders: [target],
+                }],
+            }),
+            getQuote: async (quoteRequest: typeof bscRequest) => {
+                const transaction = {
+                    chainId: 56,
+                    to: target,
+                    data: '0x12345678',
+                    value: '0',
+                    allowanceTarget: target,
+                    gasEstimate: '180000',
+                }
+                return {
+                    provider: 'across' as const,
+                    quoteId: `across-${quoteRequest.amount}`,
+                    request: quoteRequest,
+                    buyAmount: quoteRequest.amount,
+                    minimumBuyAmount: quoteRequest.amount,
+                    fees: [],
+                    estimatedDurationSeconds: 30,
+                    executionModel: 'evm-transaction' as const,
+                    steps: [{
+                        id: 'source', index: 0, type: 'source-transaction' as const,
+                        label: 'Submit source', chainId: 56, status: 'ready' as const,
+                        transaction,
+                    }],
+                    transaction,
+                    deposit: null,
+                    statusId: `across-${quoteRequest.amount}`,
+                    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+                }
+            },
+        }
+        const privateRequest = vi.fn(async ({ pathname, body }: { pathname: string; body: unknown }) => {
+            const payload = body as {
+                grossInputAmount: string
+                route: { inputAmount: string; transaction: { value: string } }
+            }
+            expect(payload.grossInputAmount).toBe('1000')
+            expect(payload.route.transaction.value).toBe('0')
+            if (payload.route.inputAmount === '1000') {
+                throw new PrivateGasAssistError(
+                    'ORDER_REQUOTE_REQUIRED',
+                    'Requote the net amount.',
+                    409,
+                    { expectedNetSwapAmountRaw: '900' },
+                )
+            }
+            expect(payload.route.inputAmount).toBe('900')
+            return {
+                id: pathname.endsWith('/preview') ? 'preview:route' : 'sponsorship-order',
+                isPreview: pathname.endsWith('/preview'),
+                netSwapAmountRaw: '900',
+            }
+        })
+        const service = new CrossChainRouteService(
+            new CrossChainRegistry([adapter]),
+            new MemoryCrossChainRouteRepository(),
+            privateRequest,
+        )
+        const quoted = await service.quote(bscRequest)
+        const preview = await service.previewSponsorship({
+            routeId: quoted.selectedRoute.routeId,
+            clientIp: '127.0.0.1',
+        })
+        expect(preview.preparedRoute.inputAmount).toBe('900')
+        privateRequest.mockClear()
+
+        const result = await service.prepareSponsorship({
+            routeId: preview.preparedRoute.routeId,
+            ownerValue: sender,
+            sourceChainId: 56,
+            clientIp: '127.0.0.1',
+            idempotencyKey: 'cross-chain-preview-net-order',
+        })
+        expect(privateRequest).toHaveBeenCalledTimes(1)
+        expect(privateRequest).toHaveBeenCalledWith(expect.objectContaining({
+            pathname: '/internal/v1/sponsorship/cross-chain/orders',
+            body: expect.objectContaining({
+                grossInputAmount: '1000',
+                route: expect.objectContaining({ inputAmount: '900' }),
+            }),
+        }))
+        expect(result.order).toMatchObject({ id: 'sponsorship-order' })
+    })
+
+    it('prefers the lower-gas route when destination output is equal', async () => {
+        const across = fixtureAdapter('across', '900')
+        const relay = fixtureAdapter('relay', '900')
+        const withGas = (
+            adapter: ReturnType<typeof fixtureAdapter>,
+            gasEstimate: string,
+            quoteId: string,
+        ) => {
+            const original = adapter.getQuote.bind(adapter)
+            adapter.getQuote = async (quoteRequest, capabilities, signal) => {
+                const quote = await original(quoteRequest, capabilities, signal)
+                const transaction = quote.transaction
+                    ? { ...quote.transaction, gasEstimate }
+                    : quote.transaction
+                return {
+                    ...quote,
+                    quoteId,
+                    transaction,
+                    steps: quote.steps.map((step) => (
+                        step.transaction
+                            ? { ...step, transaction: { ...step.transaction, gasEstimate } }
+                            : step
+                    )),
+                }
+            }
+            return adapter
+        }
+        const result = await new CrossChainRegistry([
+            withGas(across, '800000', 'across-high-gas'),
+            withGas(relay, '180000', 'relay-low-gas'),
+        ]).quote(request)
+        expect(result.selectedQuote.provider).toBe('relay')
+        expect(result.selectedQuote.transaction?.gasEstimate).toBe('180000')
+    })
+
     it('returns 200 from routes when one eligible provider succeeds', async () => {
         const across = fixtureAdapter('across', '900')
         const relay = fixtureAdapter('relay', '900')

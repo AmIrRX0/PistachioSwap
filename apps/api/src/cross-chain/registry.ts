@@ -313,45 +313,44 @@ export class CrossChainRegistry {
         const prepared = await this.run(quote.provider, () =>
             adapter.prepare!(quote, signal),
         )
-        this.quotes.set(quoteId, prepared)
-        return prepared
+        this.quotes.set(quoteId, {
+            ...prepared,
+            sponsoredGrossInputAmount:
+                prepared.sponsoredGrossInputAmount ?? quote.sponsoredGrossInputAmount,
+        })
+        return this.quotes.get(quoteId)!
     }
 
     async requoteProvider(
         quoteId: string,
         amount: string,
         signal?: AbortSignal,
+        grossInputAmount = amount,
     ): Promise<CrossChainQuote> {
         this.pruneQuotes()
         const previous = this.quotes.get(quoteId)
         if (!previous) throw new Error('Quote is unknown or expired.')
-        if (!/^[1-9]\d*$/.test(amount)) throw new Error('Invalid cross-chain amount.')
-        const capabilities = await this.getCapabilities(previous.provider, signal)
-        const request = { ...previous.request, amount }
-        if (!routeSupportsRequest(capabilities, request)) {
-            throw new CrossChainQuoteError(
-                'CROSS_CHAIN_UNSUPPORTED_TOKEN_PAIR',
-                'The selected provider no longer supports this route.',
-            )
+        if (!/^[1-9]\d*$/.test(amount) || !/^[1-9]\d*$/.test(grossInputAmount)) {
+            throw new Error('Invalid cross-chain amount.')
         }
-        const adapter = this.requireAdapter(previous.provider)
-        const quote = await this.run(previous.provider, () =>
-            adapter.getQuote(request, capabilities, signal),
-        )
-        if (
-            quote.provider !== previous.provider ||
-            quote.request.ownerAddress !== request.ownerAddress ||
-            quote.request.recipient !== request.recipient ||
-            quote.request.amount !== amount ||
-            quote.request.sourceAsset.chainId !== request.sourceAsset.chainId ||
-            quote.request.sourceAsset.address !== request.sourceAsset.address ||
-            quote.request.destinationAsset.chainId !== request.destinationAsset.chainId ||
-            quote.request.destinationAsset.address !== request.destinationAsset.address ||
-            quote.executionModel !== 'evm-transaction' ||
-            !quote.transaction ||
-            Date.parse(quote.expiresAt) <= Date.now()
-        ) {
+        const result = await this.quote({ ...previous.request, amount }, signal)
+        const selected = result.quotes.find((quote) =>
+            quote.executionModel === 'evm-transaction' &&
+            quote.transaction &&
+            quote.request.amount === amount &&
+            quote.request.ownerAddress === previous.request.ownerAddress &&
+            quote.request.recipient === previous.request.recipient &&
+            Date.parse(quote.expiresAt) > Date.now(),
+        ) ?? (result.selectedQuote.executionModel === 'evm-transaction' &&
+            result.selectedQuote.transaction
+            ? result.selectedQuote
+            : null)
+        if (!selected) {
             throw new Error('Provider returned a mismatched sponsored route.')
+        }
+        const quote = {
+            ...selected,
+            sponsoredGrossInputAmount: grossInputAmount,
         }
         this.quotes.set(quote.quoteId, quote)
         this.pruneQuotes()
@@ -436,8 +435,27 @@ function compareQuotes(left: CrossChainQuote, right: CrossChainQuote) {
     const leftNet = netOutput(left)
     const rightNet = netOutput(right)
     if (leftNet !== rightNet) return leftNet > rightNet ? -1 : 1
+    const leftGas = sourceGasEstimate(left)
+    const rightGas = sourceGasEstimate(right)
+    if (leftGas !== rightGas) {
+        if (leftGas === null) return 1
+        if (rightGas === null) return -1
+        return leftGas < rightGas ? -1 : 1
+    }
     return (left.estimatedDurationSeconds ?? Number.MAX_SAFE_INTEGER) -
         (right.estimatedDurationSeconds ?? Number.MAX_SAFE_INTEGER)
+}
+
+function sourceGasEstimate(quote: CrossChainQuote) {
+    const gas = quote.transaction?.gasEstimate
+    if (!gas || !/^[1-9]\d*$/.test(gas)) return null
+    return BigInt(gas)
+}
+
+export const crossChainQuoteRanking = {
+    compareQuotes,
+    netOutput,
+    sourceGasEstimate,
 }
 
 function netOutput(quote: CrossChainQuote) {

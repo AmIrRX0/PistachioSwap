@@ -670,6 +670,27 @@
     .ps-token-selector-scroll {
         max-height: none;
         flex: 1 1 auto;
+        /*
+         * The sheet is anchored to the bottom of the viewport, so on a device
+         * with a home indicator the last token row sits underneath it.
+         */
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+@media (pointer: coarse) {
+    /* A 34px control is below the size a fingertip can reliably hit. */
+    .ps-token-selector-close {
+        width: 44px;
+        height: 44px;
+    }
+
+    /*
+     * The search row is 49px tall but only its 26px input accepted a tap, so
+     * aiming at the row missed. The input now fills the row it sits in.
+     */
+    .ps-token-search input {
+        align-self: stretch;
     }
 }
 

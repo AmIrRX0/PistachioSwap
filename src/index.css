@@ -923,6 +923,43 @@ button:disabled {
     color: var(--color-text);
 }
 
+/*
+ * Touch targets in the swap panel.
+ *
+ * The denomination toggles and the balance shortcut measure 14px tall on a
+ * phone, and the settings and tab controls 36px. None of them can simply grow:
+ * they are absolutely positioned inside panels of fixed height, so changing
+ * their box would move the layout. Extending the hit area with a pseudo-element
+ * leaves every pixel where it is and still gives a fingertip 44px to land on.
+ *
+ * Scoped to coarse pointers so a mouse keeps the tighter original hit areas.
+ */
+@media (pointer: coarse) {
+    .sell-fiat-value::after,
+    .buy-fiat-value::after,
+    .sell-balance::after,
+    .settings-button::after,
+    .swap-tab::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: max(100%, 44px);
+        height: max(100%, 44px);
+        content: '';
+        transform: translate(-50%, -50%);
+    }
+
+    /*
+     * These two are statically positioned, so they need a containing block
+     * before the overlay above can anchor to them. The absolutely positioned
+     * panel controls already provide one.
+     */
+    .settings-button,
+    .swap-tab {
+        position: relative;
+    }
+}
+
 .swap-balance-notice {
     display: flex;
     width: 100%;

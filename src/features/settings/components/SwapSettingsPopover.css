@@ -489,6 +489,15 @@
 
     appearance: textfield;
 
+    /*
+     * iOS Safari zooms the whole page when a focused input computes below 16px,
+     * and does not zoom back out afterwards. Only touch pointers need the
+     * larger size, so the desktop popover keeps its 14px.
+     */
+    @media (pointer: coarse) {
+        font-size: 16px;
+    }
+
     transition:
             color 160ms ease;
 }

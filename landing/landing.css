@@ -638,6 +638,33 @@ p {
     }
 }
 
+/*
+ * Footer and brand links sat at 20–26px tall, well under what a fingertip can
+ * hit. Padding rather than a larger font keeps the visual weight unchanged,
+ * and the negative margin stops the footer row from growing.
+ */
+@media (pointer: coarse) {
+    .footer-links {
+        gap: 8px;
+    }
+
+    .footer-links a,
+    .brand {
+        padding-block: 12px;
+    }
+
+    .footer-links a {
+        padding-inline: 6px;
+        margin-inline: -6px;
+    }
+
+    .site-header {
+        height: auto;
+        min-height: 72px;
+        padding-block: 6px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;

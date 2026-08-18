@@ -535,7 +535,10 @@ describe('TokenSelector wallet rows', () => {
         }).disabled).toBe(true)
         expect(within(listbox).getByRole('option', {
             name: 'All Chains',
-        }).textContent).toContain('∞')
+        }).querySelector('.ps-chain-icon-all svg')).toBeTruthy()
+        expect(within(listbox).getByRole('option', {
+            name: 'All Chains',
+        }).textContent).not.toContain('∞')
         expect(listbox.querySelectorAll('.ps-chain-icon img')).toHaveLength(25)
         expect(screen.queryByText(/Polygon zkEVM is temporarily unavailable/))
             .toBeNull()

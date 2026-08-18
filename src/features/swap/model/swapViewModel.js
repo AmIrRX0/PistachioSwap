@@ -319,7 +319,7 @@ export function createSwapViewModel(context) {
     const estimatedRouteCost = formatCostUsd(crossChainCosts?.routeCostUsd, true)
     const sourceGasCost = formatCostUsd(crossChainCosts?.sourceGasUsd, true)
     const sameChainNetworkCost = activeQuote?.selectedQuote?.estimatedGasUsd
-        ? `$${activeQuote.selectedQuote.estimatedGasUsd}`
+        ? formatCostUsd(activeQuote.selectedQuote.estimatedGasUsd)
         : activeQuote?.selectedQuote ? 'Included' : null
     const minimumReceived = routing.routingMode === routing.modes.CROSS_CHAIN
         ? crossChain.currentRoute && buyToken

@@ -229,14 +229,24 @@
 }
 
 .ps-chain-icon-all {
-    background: linear-gradient(135deg, #88d36a, #3374ff);
-    font-size: 20px;
-    line-height: 1;
+    background: #111;
+    color: #fff;
+}
+
+.ps-chain-icon-all svg {
+    display: block;
+    width: 14px;
+    height: 14px;
 }
 
 .ps-network-menu .ps-chain-icon {
     width: 28px;
     height: 28px;
+}
+
+.ps-network-menu .ps-chain-icon-all svg {
+    width: 16px;
+    height: 16px;
 }
 
 .ps-chain-unavailable-note {

@@ -6,7 +6,7 @@ import {
     getTokenDisplaySymbol,
 } from '../services/tokenDisplay.js'
 import TokenIcon, { ChainIcon } from './TokenIcon.jsx'
-import { ChevronDownIcon } from './TokenSelectorIcons.jsx'
+import { ChevronDownIcon, AllChainsIcon } from './TokenSelectorIcons.jsx'
 import { CURATED_EVM_CHAINS, getCuratedEvmChain, TOKEN_DISCOVERY_CHAIN_IDS } from '../../../web3/curatedEvmChains.js'
 import { getTokenKey, shortenAddress } from '../model/tokenSelectorState.js'
 import { formatWalletTokenAmount, formatWalletUsdValue } from '../services/walletTokens.js'
@@ -68,12 +68,12 @@ export function ChainSelector({ chainId, onChange }) {
     return (
         <div className="ps-network-control">
             <button type="button" className="ps-network-trigger" aria-label="Token network" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)} onKeyDown={handleKeyDown}>
-                {selectedChain ? <ChainIcon chainId={selectedChain.id} name={selectedChain.name} /> : <span className="ps-chain-icon ps-chain-icon-all" aria-hidden="true">∞</span>}
+                {selectedChain ? <ChainIcon chainId={selectedChain.id} name={selectedChain.name} /> : <AllChainsIcon />}
                 <span>{selectedChain?.name ?? 'All Chains'}</span><ChevronDownIcon />
             </button>
             {open && <div className="ps-network-menu" role="listbox" aria-label="Token network">
                 {options.map((option) => <button key={option.id} type="button" role="option" aria-selected={String(option.id) === String(chainId)} aria-disabled={!option.active} disabled={!option.active} onClick={() => selectOption(option)}>
-                    {option.id === 'all' ? <span className="ps-chain-icon ps-chain-icon-all" aria-hidden="true">∞</span> : <ChainIcon chainId={option.id} name={option.name} />}
+                    {option.id === 'all' ? <AllChainsIcon /> : <ChainIcon chainId={option.id} name={option.name} />}
                     <span>{option.name}</span>{!option.active && <small>Unavailable</small>}
                 </button>)}
             </div>}

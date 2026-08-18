@@ -688,6 +688,15 @@ button:disabled {
     line-height: 1;
 }
 
+@media (max-width: 520px) {
+    .sell-amount-input,
+    .buy-amount-input,
+    .amount-input-prefix,
+    .buy-amount {
+        font-size: clamp(22px, 7vw, 28px);
+    }
+}
+
 .sell-amount-input::placeholder {
     color: var(--color-amount-muted);
     opacity: 1;

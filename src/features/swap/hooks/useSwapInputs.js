@@ -3,6 +3,7 @@ import { formatUnits } from 'viem'
 import { resolveSelectedToken } from '../../tokens/services/walletTokens.js'
 import { getDisplayTokenPrice } from '../../tokens/services/tokenPrices.js'
 import { formatUsdAmount } from '../../../services/fiatValue.js'
+import { formatSwapSecondaryTokenAmount } from '../model/swapDisplay.js'
 import { getTokenIdentity, normalizeMarketToken } from '../../tokens/model/tokenNormalization.js'
 import {
     decimalToUnits,
@@ -87,14 +88,10 @@ export function useSwapInputs({
         ? buyAmount ? `$${buyAmount}` : '$0'
         : formatUsdAmount(buyAmount, buyDisplayPrice)
     const sellSecondaryValue = sellInputDenomination === USD_DENOMINATION
-        ? sellToken && sellTokenDisplayAmount
-            ? `${sellTokenDisplayAmount} ${sellToken.symbol}`
-            : `0 ${sellToken?.symbol ?? ''}`.trim()
+        ? formatSwapSecondaryTokenAmount(sellTokenDisplayAmount, sellToken)
         : sellFiatValue
     const buySecondaryValue = buyInputDenomination === USD_DENOMINATION
-        ? buyToken && buyTokenDisplayAmount
-            ? `${buyTokenDisplayAmount} ${buyToken.symbol}`
-            : `0 ${buyToken?.symbol ?? ''}`.trim()
+        ? formatSwapSecondaryTokenAmount(buyTokenDisplayAmount, buyToken)
         : buyFiatValue
 
     useEffect(() => {

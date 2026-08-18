@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import SwapAmountInput from './SwapAmountInput.jsx'
 import SwapQuickAmounts from './SwapQuickAmounts.jsx'
 import { AnimatedSwapTokenButton } from './SwapTokenButton.jsx'
+import { formatWalletTokenAmount } from '../../tokens/services/walletTokens.js'
 import { getTokenDisplaySymbol } from '../../tokens/services/tokenDisplay.js'
 
 /**
@@ -85,8 +86,9 @@ export default function SwapTokenPanel(props) {
                     className={['sell-balance', invalid ? 'sell-balance-insufficient' : ''].filter(Boolean).join(' ')}
                     onClick={balance.onUseMaximum}
                     aria-label={`Use maximum ${getTokenDisplaySymbol(token)} balance`}
+                    title={`${token.balance} ${getTokenDisplaySymbol(token)}`}
                 >
-                    {token.balance}{' '}{getTokenDisplaySymbol(token)}
+                    {formatWalletTokenAmount(token.balance)}{' '}{getTokenDisplaySymbol(token)}
                 </button>
             )}
         </motion.section>

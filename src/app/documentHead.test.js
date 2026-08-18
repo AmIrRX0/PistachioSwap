@@ -109,6 +109,28 @@ describe('landing page', () => {
         }
     })
 
+    it('puts the terms people search for into its headings', () => {
+        // A heading carries weight a paragraph does not, so the brand and the
+        // feature people actually search for have to appear in one.
+        const h1 = /<h1>([\s\S]*?)<\/h1>/.exec(html)?.[1] ?? ''
+        const headings = [...html.matchAll(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/g)]
+            .map((match) => match[1].replace(/<[^>]+>/g, ' '))
+            .join(' ')
+            .toLowerCase()
+
+        expect(h1.toLowerCase()).toContain('pistachio swap')
+        expect(headings).toContain('gas assisted swaps')
+    })
+
+    it('stays short enough for someone to actually read it', () => {
+        const words = html
+            .replace(/<script[\s\S]*?<\/script>/g, '')
+            .replace(/<[^>]+>/g, ' ')
+            .split(/\s+/)
+            .filter(Boolean)
+        expect(words.length).toBeLessThan(900)
+    })
+
     it('renders its content without the application bundle', () => {
         expect(html).not.toContain('/src/main.jsx')
         const text = html

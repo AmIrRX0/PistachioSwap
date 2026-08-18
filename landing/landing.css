@@ -224,10 +224,16 @@ p {
 }
 
 .hero h1 {
-    max-width: 16ch;
+    max-width: 24ch;
     margin-inline: auto;
-    font-size: clamp(38px, 6.2vw, 66px);
+    font-size: clamp(33px, 4.9vw, 54px);
     font-weight: 600;
+    text-wrap: balance;
+}
+
+/* Keeps the hyphen in "self-custodial" from becoming a line break. */
+.hero h1 .nowrap {
+    white-space: nowrap;
 }
 
 .hero h1 em {

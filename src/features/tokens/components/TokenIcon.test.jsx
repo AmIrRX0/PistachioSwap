@@ -3,7 +3,7 @@
 import { render, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import TokenIcon from './TokenIcon.jsx'
+import TokenIcon, { ChainIcon } from './TokenIcon.jsx'
 
 const completeDescriptor = Object.getOwnPropertyDescriptor(
     HTMLImageElement.prototype,
@@ -58,5 +58,15 @@ describe('TokenIcon', () => {
             expect(image.classList.contains('ps-token-main-logo-loaded')).toBe(true)
         })
         expect(container.querySelector('.ps-token-logo-skeleton')).toBeNull()
+    })
+
+    it('shows only the chain logo in the network selector, not a letter behind it', () => {
+        const { container } = render(
+            <ChainIcon chainId={56} name="BNB Smart Chain" />,
+        )
+        const icon = container.querySelector('.ps-chain-icon')
+        expect(icon.querySelector('img')).not.toBeNull()
+        expect(icon.querySelector('img').getAttribute('src')).toBe('/networkIcons/bsc.webp')
+        expect(icon.textContent).toBe('')
     })
 })

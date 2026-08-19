@@ -27,6 +27,27 @@ export function ClockIcon() {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" /><path d="M12 7.5V12l3 2" fill="none" stroke="#191919" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg>
 }
 
+/** Rounded chain mark used for the All Chains network option. */
+export function AllChainsIcon() {
+    return (
+        <span className="ps-chain-icon ps-chain-icon-all" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <g
+                    transform="rotate(-45 12 12)"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                >
+                    <rect x="2.75" y="9.2" width="10" height="5.6" rx="2.8" />
+                    <rect x="11.25" y="9.2" width="10" height="5.6" rx="2.8" />
+                </g>
+            </svg>
+        </span>
+    )
+}
+
 export function TrendingIcon() {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 5-5 4 4 7-8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /><path d="M15 7h5v5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg>
 }

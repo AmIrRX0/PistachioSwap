@@ -1207,10 +1207,15 @@ describe('App wallet integration', () => {
         const amountInput = getByRole('textbox', { name: 'Sell amount' })
 
         fireEvent.click(getByRole('button', { name: 'Use maximum BNB balance' }))
+        expect(amountInput.value).toBe('0.0053')
+        fireEvent.focus(amountInput)
         expect(amountInput.value).toBe('0.00529963167546908')
+        fireEvent.blur(amountInput)
 
         fireEvent.pointerEnter(container.querySelector('.sell-panel'))
         fireEvent.click(getByRole('button', { name: '50%' }))
+        expect(amountInput.value).toBe('0.00265')
+        fireEvent.focus(amountInput)
         expect(amountInput.value).toBe('0.00264981583773454')
     })
 

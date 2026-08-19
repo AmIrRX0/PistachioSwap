@@ -640,6 +640,7 @@ button:disabled {
 .buy-amount-position {
     position: absolute;
     left: var(--spacing-panel-horizontal);
+    right: calc(var(--size-selected-token-min-width) + var(--spacing-token-right) + 8px);
 }
 
 .sell-amount-position {
@@ -651,7 +652,7 @@ button:disabled {
 }
 
 .sell-amount-input {
-    width: var(--spacing-sell-amount-width);
+    width: 100%;
     min-width: 0;
     height: 44px;
     padding: 0;
@@ -662,11 +663,14 @@ button:disabled {
     font-size: var(--size-amount-font);
     font-weight: var(--font-regular);
     line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .amount-input-shell {
     display: flex;
-    width: var(--spacing-sell-amount-width);
+    width: 100%;
+    max-width: var(--spacing-sell-amount-width);
     height: 44px;
     align-items: center;
     min-width: 0;
@@ -682,6 +686,15 @@ button:disabled {
     color: var(--color-text);
     font-size: var(--size-amount-font);
     line-height: 1;
+}
+
+@media (max-width: 520px) {
+    .sell-amount-input,
+    .buy-amount-input,
+    .amount-input-prefix,
+    .buy-amount {
+        font-size: clamp(22px, 7vw, 28px);
+    }
 }
 
 .sell-amount-input::placeholder {
@@ -720,9 +733,13 @@ button:disabled {
 .sell-balance {
     position: absolute;
     bottom: var(--spacing-secondary-bottom);
+    overflow: hidden;
+    max-width: calc(50% - 18px);
     color: var(--color-muted);
     font-size: var(--size-secondary-font);
     line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .denomination-toggle {

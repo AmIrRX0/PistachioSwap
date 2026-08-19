@@ -167,14 +167,15 @@ export function ChainIcon({
 
     return (
         <span className={['ps-chain-icon', className].filter(Boolean).join(' ')}>
-            <span aria-hidden="true">{chainName.slice(0, 1)}</span>
-            {logoURI && !failed && (
+            {logoURI && !failed ? (
                 <img
                     src={logoURI}
                     alt=""
                     draggable="false"
                     onError={() => setFailed(true)}
                 />
+            ) : (
+                <span aria-hidden="true">{chainName.slice(0, 1)}</span>
             )}
         </span>
     )

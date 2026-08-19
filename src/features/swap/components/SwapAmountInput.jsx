@@ -1,3 +1,6 @@
+import { useState } from 'react'
+
+import { formatAmountInputDisplay } from '../model/swapDisplay.js'
 import './SwapAmountInput.css'
 
 /**
@@ -7,13 +10,17 @@ import './SwapAmountInput.css'
  * @sideEffects Emits the browser change event; no quote, RPC, or wallet work occurs here.
  */
 export default function SwapAmountInput({ value, denomination, label, invalid, className, onChange }) {
+    const [focused, setFocused] = useState(false)
     const isUsd = denomination === 'USD'
+    const displayValue = focused ? value : formatAmountInputDisplay(value, denomination)
     return (
         <div className={['amount-input-shell', isUsd ? 'amount-input-usd' : ''].filter(Boolean).join(' ')}>
             {isUsd && <span className="amount-input-prefix" aria-hidden="true">$</span>}
             <input
-                value={value}
+                value={displayValue}
                 onChange={onChange}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
                 inputMode="decimal"
                 placeholder="0"
                 aria-label={isUsd ? `${label} USD amount` : `${label} amount`}

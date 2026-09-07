@@ -89,6 +89,15 @@ export function classifyPackagedLicense({ declaredLicense, licenseText }) {
         }
     }
 
+    if (text.trim()) {
+        return {
+            kind: 'documented',
+            group: 'other',
+            label: 'See included license file',
+            requiredNotice: null,
+        }
+    }
+
     return {
         kind: 'unresolved',
         group: 'unresolved',

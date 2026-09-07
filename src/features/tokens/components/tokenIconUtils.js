@@ -48,16 +48,21 @@ function logoCandidatesFromToken(token) {
     ])
 }
 
-function storedTokenRecords(value) {
+function storedTokenRecords(value, depth = 0) {
     if (Array.isArray(value)) return value
-    if (!value || typeof value !== 'object') return []
-    return [
+    if (!value || typeof value !== 'object' || depth > 2) return []
+    const direct = [
         value.tokens,
         value.featuredTokens,
         value.browseTokens,
         value.commonTokens,
         value.fallbackTokens,
     ].flatMap((records) => Array.isArray(records) ? records : [])
+    return [
+        ...direct,
+        ...storedTokenRecords(value.payload, depth + 1),
+        ...storedTokenRecords(value.data, depth + 1),
+    ]
 }
 
 function getStoredLogoCandidates(token) {

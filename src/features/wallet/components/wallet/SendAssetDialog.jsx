@@ -379,7 +379,12 @@ export default function SendAssetDialog({
                                 </section>
                             )}
 
-                            <TransactionStatusDialog status={status} hash={hash} explorerUrl={selectedExplorerUrl} />
+                            <TransactionStatusDialog
+                                status={status}
+                                hash={hash}
+                                token={review?.token ?? activeSelectedToken}
+                                explorerUrl={selectedExplorerUrl}
+                            />
                             {displayError && <p className="send-error" role="alert">{displayError}</p>}
                             {status !== 'sent' && (
                                 <button

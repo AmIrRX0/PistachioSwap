@@ -6,6 +6,7 @@ import { BNB_CHAIN_LOGO_URI } from '../../../web3/curatedEvmChains.js'
 import { getTokenLogoCandidates } from './tokenIconUtils.js'
 
 const bankAddress = '0x1111111111111111111111111111111111111111'
+const asterAddress = '0x2222222222222222222222222222222222222222'
 
 describe('activity token icon metadata reuse', () => {
     afterEach(() => {
@@ -37,6 +38,29 @@ describe('activity token icon metadata reuse', () => {
             'https://assets.example.test/bank.png',
             'https://assets.example.test/bank-fallback.png',
         ])
+    })
+
+    it('reads the nested all-chain market cache used by the main selector', () => {
+        localStorage.setItem(
+            'pistachioswap:market-tokens:v7:all',
+            JSON.stringify({
+                cachedAt: Date.now(),
+                payload: {
+                    tokens: [{
+                        chainId: 56,
+                        address: asterAddress,
+                        symbol: 'ASTER',
+                        logoURI: 'https://assets.example.test/aster.png',
+                    }],
+                },
+            }),
+        )
+
+        expect(getTokenLogoCandidates({
+            chainId: 56,
+            address: asterAddress,
+            symbol: 'ASTER',
+        })).toEqual(['https://assets.example.test/aster.png'])
     })
 
     it('uses only the canonical yellow BNB artwork for native BNB', () => {

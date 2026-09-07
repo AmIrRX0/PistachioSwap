@@ -52,6 +52,8 @@ Polygon zkEVM (`1101`) is intentionally excluded from history refresh because th
 
 Alchemy Transfers API is preferred on the chains where the current Alchemy product matrix exposes it. The browser uses thirdweb Insight as the cross-chain fallback, including chains where Alchemy only exposes ordinary RPC and not Transfers API.
 
+PistachioSwap uses thirdweb's current canonical Insight origin, `https://insight.thirdweb.com`, and sends an explicit `chain_id` query parameter for each history request. The generated thirdweb API still accepts chain-specific Insight subdomains, but using the canonical origin plus an explicit chain filter avoids depending on subdomain routing behavior.
+
 If Alchemy has a transient failure on an otherwise-supported chain and thirdweb is configured, the same refresh falls through to thirdweb instead of turning the wallet's history into an empty result.
 
 Neither provider is routed through PistachioSwap's API.
@@ -114,13 +116,39 @@ www.pistachioswap.com
 
 Insight requests send the client ID through `x-client-id`. Raw thirdweb RPC uses thirdweb's documented client-ID RPC URL format. A client ID is intentionally a frontend identifier; domain restrictions are the abuse boundary.
 
+## Direct thirdweb diagnostic
+
+From a shell that already has the production frontend environment loaded, this request prints the HTTP status, headers, and body without printing the client ID itself:
+
+```bash
+wallet='0x880c39159919700166E4612d4b7Aa344fc21CD6F'
+url="https://insight.thirdweb.com/v1/wallets/${wallet}/transactions?chain_id=5000&limit=1&sort_by=block_number&sort_order=desc"
+
+curl -sS \
+  -D /tmp/thirdweb-insight.headers \
+  -o /tmp/thirdweb-insight.body \
+  -w '\nHTTP %{http_code}\n' \
+  "$url" \
+  -H 'Origin: https://pistachioswap.com' \
+  -H 'Accept: application/json' \
+  -H "x-client-id: $VITE_WALLET_HISTORY_THIRDWEB_CLIENT_ID"
+
+printf '%s\n' '--- response headers ---'
+sed -n '1,30p' /tmp/thirdweb-insight.headers
+printf '%s\n' '--- response body ---'
+cat /tmp/thirdweb-insight.body
+printf '\n'
+```
+
+A silent `curl -sS` body by itself is not evidence of success because HTTP error/status information is not shown unless requested.
+
 ## Content Security Policy
 
-If production sends a CSP with `connect-src`, allow the provider hosts used by this feature. For all-chain history the narrow domain wildcards are:
+If production sends a CSP with `connect-src`, allow only the provider hosts used by this feature:
 
 ```text
 https://*.g.alchemy.com
-https://*.insight.thirdweb.com
+https://insight.thirdweb.com
 https://*.rpc.thirdweb.com
 ```
 

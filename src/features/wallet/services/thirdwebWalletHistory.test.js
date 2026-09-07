@@ -32,6 +32,8 @@ describe('thirdweb browser wallet history fallback', () => {
 
             if (url.startsWith('https://5000.insight.thirdweb.com/')) {
                 expect(options.headers['x-client-id']).toBe('frontend-client-id')
+                const parsed = new URL(url)
+                expect(parsed.searchParams.get('chain_id')).toBe('5000')
                 return jsonResponse({
                     data: [],
                     meta: { page: 0, limit: 100, total_items: 0, total_pages: 0 },
@@ -64,12 +66,19 @@ describe('thirdweb browser wallet history fallback', () => {
             .map(url => new URL(url))
             .find(url => url.pathname === `/v1/wallets/${wallet}/transactions`)
         expect(walletRequest?.origin).toBe('https://5000.insight.thirdweb.com')
+        expect(walletRequest?.searchParams.get('chain_id')).toBe('5000')
         expect(walletRequest?.searchParams.get('page')).toBe('0')
         expect(walletRequest?.searchParams.get('limit')).toBe('100')
         expect(walletRequest?.searchParams.get('sort_by')).toBe('block_number')
         expect(walletRequest?.searchParams.get('sort_order')).toBe('desc')
-        expect(urls.some(url => new URL(url).pathname === '/v1/tokens/transfers'))
-            .toBe(true)
+
+        const transferRequest = urls
+            .map(url => new URL(url))
+            .find(url => url.pathname === '/v1/tokens/transfers')
+        expect(transferRequest?.searchParams.get('chain_id')).toBe('5000')
+        expect(transferRequest?.searchParams.get('owner_address')).toBe(wallet)
+        expect(transferRequest?.searchParams.get('token_types')).toBe('erc20')
+        expect(transferRequest?.searchParams.get('metadata')).toBe('true')
     })
 
     it('constructs chain-scoped Insight and RPC origins', () => {

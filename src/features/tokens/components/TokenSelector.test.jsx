@@ -931,7 +931,7 @@ describe('TokenSelector wallet rows', () => {
         expect(badge.getAttribute('title')).toBe('BNB Smart Chain')
         expect(badge.getAttribute('aria-label')).toBe('BNB Smart Chain network')
         expect(badge.querySelector('img').getAttribute('src'))
-            .toBe('/networkIcons/bsc.webp')
+            .toBe('/assets/bnb-logo-Ujb8xjX_.png')
         fireEvent.error(mainLogo)
         expect(row.querySelector('.ps-token-main-logo').getAttribute('src'))
             .toBe('https://example.com/trusted-xaut-fallback.png')

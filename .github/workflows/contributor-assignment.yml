@@ -1,7 +1,7 @@
 name: Contributor Assignment Agreement
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, synchronize, reopened]
   issue_comment:
     types: [created, edited, deleted]
@@ -10,11 +10,12 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+  statuses: write
 
 jobs:
   verify-acceptance:
     if: >-
-      github.event_name == 'pull_request' ||
+      github.event_name == 'pull_request_target' ||
       (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     name: Verify CAA v1.2 acceptance
     runs-on: ubuntu-latest
@@ -32,6 +33,7 @@ jobs:
           const apiUrl = process.env.GITHUB_API_URL;
           const repository = process.env.REPOSITORY;
           const prNumber = Number(process.env.PR_NUMBER);
+          const statusContext = 'CAA v1.2 / PR-author acceptance';
 
           const checkboxStatement =
             'I have read and agree to the PistachioSwap Contributor Assignment Agreement Version 1.2. By checking this box from my authenticated GitHub account, I intend this action to serve as my electronic signature. I confirm that I own or control the rights I am assigning, have authority to assign them, and understand that this Agreement covers my applicable existing and future PistachioSwap Contributions as described in the Agreement.';
@@ -46,21 +48,26 @@ jobs:
           const headers = {
             Accept: 'application/vnd.github+json',
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
             'X-GitHub-Api-Version': '2022-11-28',
           };
 
-          async function githubGet(path) {
-            const response = await fetch(`${apiUrl}${path}`, { headers });
+          async function githubRequest(path, options = {}) {
+            const response = await fetch(`${apiUrl}${path}`, {
+              ...options,
+              headers: { ...headers, ...(options.headers || {}) },
+            });
             if (!response.ok) {
               throw new Error(`GitHub API ${response.status} for ${path}`);
             }
+            if (response.status === 204) return null;
             return response.json();
           }
 
           async function listComments() {
             const comments = [];
             for (let page = 1; ; page += 1) {
-              const batch = await githubGet(
+              const batch = await githubRequest(
                 `/repos/${repository}/issues/${prNumber}/comments?per_page=100&page=${page}`,
               );
               comments.push(...batch);
@@ -68,12 +75,31 @@ jobs:
             }
           }
 
-          const pr = await githubGet(`/repos/${repository}/pulls/${prNumber}`);
+          async function setStatus(sha, state, description) {
+            await githubRequest(`/repos/${repository}/statuses/${sha}`, {
+              method: 'POST',
+              body: JSON.stringify({
+                state,
+                context: statusContext,
+                description: description.slice(0, 140),
+              }),
+            });
+          }
+
+          const pr = await githubRequest(`/repos/${repository}/pulls/${prNumber}`);
           const authorLogin = pr.user?.login;
           const authorId = pr.user?.id;
+          const headSha = pr.head?.sha;
 
-          if (!authorLogin || !Number.isSafeInteger(authorId)) {
-            throw new Error('Could not identify the pull request author.');
+          if (!authorLogin || !Number.isSafeInteger(authorId) || !headSha) {
+            throw new Error('Could not identify the pull request author and head commit.');
+          }
+
+          async function fail(message, detail) {
+            await setStatus(headSha, 'failure', message);
+            console.error(message);
+            if (detail) console.error(detail);
+            process.exit(1);
           }
 
           const body = pr.body || '';
@@ -85,9 +111,10 @@ jobs:
             );
 
           if (!checkboxAccepted) {
-            console.error(`CAA v1.2 checkbox has not been accepted in PR #${prNumber} by @${authorLogin}.`);
-            console.error('The pull request author must personally check the exact CAA v1.2 acceptance box in the PR description.');
-            process.exit(1);
+            await fail(
+              `CAA v1.2 checkbox missing for @${authorLogin}.`,
+              'The pull request author must personally check the exact CAA v1.2 acceptance box in the PR description.',
+            );
           }
 
           const comments = await listComments();
@@ -99,13 +126,20 @@ jobs:
           );
 
           if (!acceptance) {
-            console.error(`CAA v1.2 acceptance comment from PR author @${authorLogin} was not found.`);
-            console.error('The PR author must personally post the exact acceptance statement from the same authenticated GitHub account that opened the PR.');
-            console.error('Acceptance comments from maintainers, bots, or any other account do not count.');
-            process.exit(1);
+            await fail(
+              `CAA v1.2 author comment missing for @${authorLogin}.`,
+              'Only the exact acceptance comment posted by the same GitHub login and numeric user ID that opened the PR counts. Maintainer, owner, bot, and other-user comments do not count.',
+            );
           }
 
+          await setStatus(
+            headSha,
+            'success',
+            `CAA v1.2 accepted by PR author @${authorLogin}.`,
+          );
+
           console.log(`CAA v1.2 accepted by PR author @${authorLogin} (GitHub user id ${authorId}).`);
+          console.log(`PR head commit: ${headSha}`);
           console.log(`Acceptance comment: ${acceptance.html_url}`);
           console.log(`Acceptance timestamp: ${acceptance.created_at}`);
           NODE

@@ -1,5 +1,7 @@
 import { NATIVE_TOKEN_ADDRESS, createTokenId } from './address.js'
 
+const BNB_LOGO_URI = '/assets/bnb-logo-Ujb8xjX_.png'
+
 export const NATIVE_BNB_TOKEN = Object.freeze({
     id: createTokenId(56, NATIVE_TOKEN_ADDRESS),
     chainId: 56 as const,
@@ -7,10 +9,10 @@ export const NATIVE_BNB_TOKEN = Object.freeze({
     name: 'BNB',
     symbol: 'BNB',
     decimals: 18,
-    logoURI: '/icons/BSC.svg',
-    logoCandidates: ['/icons/BSC.svg'],
+    logoURI: BNB_LOGO_URI,
+    logoCandidates: [BNB_LOGO_URI],
     logoSource: 'local' as const,
-    chainLogoURI: '/icons/BSC.svg',
+    chainLogoURI: BNB_LOGO_URI,
     coinGeckoId: 'binancecoin',
     isNative: true as const,
     verificationStatus: 'established' as const,

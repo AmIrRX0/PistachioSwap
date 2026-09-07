@@ -4,6 +4,7 @@ import { Check, Copy, X } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
 import { shortenAddress } from '../../../../services/address.js'
+import { BNB_CHAIN_LOGO_URI } from '../../../../web3/curatedEvmChains.js'
 
 /** Renders the receive-address QR/copy Radix dialog without submitting transactions. */
 export default function ReceiveDialog({ open, onOpenChange, address }) {
@@ -27,7 +28,7 @@ export default function ReceiveDialog({ open, onOpenChange, address }) {
                         </Dialog.Close>
                     </header>
                     <div className="wallet-network-label">
-                        <img src="/icons/BSC.svg" alt="" />
+                        <img src={BNB_CHAIN_LOGO_URI} alt="" />
                         <span>BNB Smart Chain</span>
                     </div>
                     <div className="receive-qr">

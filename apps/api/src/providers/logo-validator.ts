@@ -10,7 +10,7 @@ const TRUSTED_IMAGE_HOSTS = new Set([
     'static.alchemyapi.io',
 ])
 const TRUSTED_LOCAL_IMAGES = new Set([
-    '/icons/bnb.svg',
+    '/assets/bnb-logo-Ujb8xjX_.png',
     '/icons/tether-gold.png',
 ])
 const SUCCESS_TTL_MS = 24 * 60 * 60 * 1000

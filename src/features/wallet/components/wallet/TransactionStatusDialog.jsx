@@ -1,6 +1,8 @@
 import { CheckCircle2, CircleX, ExternalLink, LoaderCircle } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 
+import TokenIcon from '../../../tokens/components/TokenIcon.jsx'
+
 /** Returns the multichain Blockscan URL for an EVM transaction hash. */
 export function blockscanTransactionUrl(hash) {
     const normalized = String(hash ?? '').trim()
@@ -8,7 +10,7 @@ export function blockscanTransactionUrl(hash) {
 }
 
 /** Presents wallet transfer pending/success/failure status and optional explorer link. */
-export default function TransactionStatusDialog({ status, hash }) {
+export default function TransactionStatusDialog({ status, hash, token = null }) {
     const reducedMotion = useReducedMotion()
     if (status === 'idle' || status === 'review') return null
     const pending = status === 'confirming' || status === 'sending' || status === 'submitted'
@@ -20,6 +22,7 @@ export default function TransactionStatusDialog({ status, hash }) {
             role="status"
             style={pending ? { position: 'relative', overflow: 'hidden' } : undefined}
         >
+            {token && <TokenIcon token={token} size="button" />}
             {pending && <LoaderCircle className="status-spinner" aria-hidden="true" />}
             {status === 'sent' && <CheckCircle2 aria-hidden="true" />}
             {failed && <CircleX aria-hidden="true" />}

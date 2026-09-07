@@ -46,6 +46,29 @@
     opacity: 1;
 }
 
+/*
+ * Wallet activity uses the same TokenIcon component as the selector. Keep the
+ * artwork large and let TokenIcon own the one network badge instead of stacking
+ * the legacy activity badge on top of it.
+ */
+.uni-activity-token .ps-token-icon-list {
+    width: 42px;
+    height: 42px;
+}
+
+.uni-activity-token .ps-token-network-badge {
+    right: -1px;
+    bottom: -1px;
+    width: 18px;
+    height: 18px;
+    border-color: var(--uni-wallet-bg);
+    background: var(--uni-wallet-bg);
+}
+
+.uni-activity-token > .ps-token-icon + .uni-activity-chain {
+    display: none;
+}
+
 @keyframes ps-token-logo-shimmer {
     from {
         background-position: 120% 0;

@@ -1,6 +1,5 @@
 import {
     useEffect,
-    useMemo,
     useRef,
     useState,
 } from 'react'
@@ -192,10 +191,9 @@ export default function TokenIcon({
                                       size = 'list',
                                       showChainBadge = true,
                                   }) {
-    const tokenLogos = useMemo(
-        () => getTokenLogoCandidates(token),
-        [token],
-    )
+    // Resolve on every render so a sparse activity row can pick up catalog
+    // metadata that finished loading after the row first mounted.
+    const tokenLogos = getTokenLogoCandidates(token)
     const tokenLogoKey = tokenLogos.join('|')
 
     const chainLogo =

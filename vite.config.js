@@ -5,7 +5,6 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 
-import { crawlerLandingPlugin } from './src/web3/crawlerLandingMiddleware.js'
 import { originCacheHeadersPlugin } from './src/web3/originCacheMiddleware.js'
 import { resolveModulePreloadDependencies } from './src/web3/walletChunkPreload.js'
 
@@ -19,7 +18,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
-      crawlerLandingPlugin(),
       originCacheHeadersPlugin(),
       tailwindcss(),
       react(),
@@ -68,9 +66,9 @@ export default defineConfig(({ mode }) => {
         },
         /*
          * App plus static HTML pages. `index.html` stays the swap application
-         * at `/`. Landing, FAQ, and Gas Assist build to `dist/landing/...`,
-         * and the dedicated guide stays at `dist/gas-assist/`, so crawlers
-         * can read them without executing the wallet bundle.
+         * at `/` for visitors and crawlers alike. Product guides build to
+         * `dist/landing/...`; the in-depth fees guide stays at
+         * `dist/gas-assist/`. All guides are readable without wallet JavaScript.
          */
         input: {
           main: resolve(import.meta.dirname, 'index.html'),
@@ -78,6 +76,8 @@ export default defineConfig(({ mode }) => {
           faq: resolve(import.meta.dirname, 'landing/faq/index.html'),
           landingGasAssist: resolve(import.meta.dirname, 'landing/gas-assist/index.html'),
           gasAssist: resolve(import.meta.dirname, 'gas-assist/index.html'),
+          walletGuide: resolve(import.meta.dirname, 'landing/wallet/index.html'),
+          howItWorks: resolve(import.meta.dirname, 'landing/how-it-works/index.html'),
         },
       },
     },

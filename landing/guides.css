@@ -1,0 +1,51 @@
+/* Shared reading/navigation layer for the static product guides. */
+.guide-header { min-height: 72px; height: auto; padding-block: 12px; }
+.guide-nav { gap: 20px; }
+.guide-nav [aria-current="page"] { color: var(--accent); }
+.guide-page { padding-top: 32px; }
+.guide-page section[id], .guide-page h2[id] { scroll-margin-top: 160px; }
+.guide-page .crumbs { margin: 0; font-size: 13px; line-height: 1.8; }
+.guide-hero { max-width: 850px; margin: 64px auto 0; text-align: center; }
+.guide-eyebrow { margin-bottom: 20px; color: var(--accent); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.guide-hero h1 { font-size: clamp(38px, 5.5vw, 68px); text-wrap: balance; }
+.guide-hero .hero-lede { max-width: 660px; margin: 24px auto 0; font-size: clamp(17px, 2vw, 21px); }
+.guide-hero .hero-actions { margin-top: 28px; justify-content: center; }
+.guide-toc { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 22px; margin: 48px 0 0; padding: 18px 0; border-block: 1px solid var(--border); font-size: 14px; }
+.guide-toc span { color: var(--muted); }
+.guide-toc a { padding-block: 10px; }
+.guide-facts { margin-top: 36px; }
+.guide-facts h2 { font-size: 19px; }
+.guide-prose { max-width: 740px; margin: 52px auto 0; }
+.guide-prose section + section { margin-top: 48px; }
+.guide-prose section > h2 { margin-top: 0; font-size: clamp(25px, 3vw, 32px); text-wrap: balance; }
+.guide-prose code { overflow-wrap: anywhere; }
+.guide-workflow { padding-left: 26px; }
+.guide-workflow li { padding-left: 12px; margin-bottom: 28px; }
+.guide-workflow li::marker { color: var(--accent); font-weight: 600; }
+.guide-workflow h3 { color: var(--text); font-size: 20px; }
+.guide-workflow p { margin-top: 10px; }
+.guide-definitions { margin: 24px 0; }
+.guide-definitions > div { padding: 20px 0; border-bottom: 1px solid var(--border); }
+.guide-definitions dt { color: var(--text); font-weight: 600; }
+.guide-definitions dd { margin: 10px 0 0; }
+.guide-related { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--border); }
+.guide-related h2 { font-size: 25px; }
+.guide-related nav { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 20px; }
+.guide-related nav a { display: inline-flex; min-height: 44px; align-items: center; }
+.guide-related p { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.guide-card-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; }
+@media (max-width: 1040px) {
+  .guide-header { flex-wrap: wrap; gap: 12px; }
+  .guide-header .guide-nav { order: 3; display: flex; flex-basis: 100%; justify-content: center; flex-wrap: wrap; gap: 4px 20px; font-size: 14px; }
+  .guide-nav a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (max-width: 520px) {
+  .guide-header .brand { font-size: 15px; gap: 6px; }
+  .guide-header > .button { padding-inline: 15px; font-size: 14px; }
+  .guide-header .guide-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .guide-nav a { justify-content: center; }
+  .guide-hero { margin-top: 36px; }
+  .guide-page section[id], .guide-page h2[id] { scroll-margin-top: 220px; }
+  .guide-toc { margin-top: 32px; justify-content: flex-start; gap: 0 18px; }
+  .guide-toc span { width: 100%; }
+}

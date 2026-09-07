@@ -39,6 +39,8 @@ describe('wallet JavaScript stays off first visit and off crawler HTML', () => {
             'landing/faq/index.html',
             'landing/gas-assist/index.html',
             'gas-assist/index.html',
+            'landing/wallet/index.html',
+            'landing/how-it-works/index.html',
         ]) {
             const html = readFileSync(path, 'utf8')
             expect(html).not.toContain('/src/main.jsx')

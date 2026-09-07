@@ -1,10 +1,10 @@
 # This file is served as https://pistachioswap.com/robots.txt from public/.
 # Cloudflare managed robots.txt is already off. Leave it off so this file
 # is not prepended with "# BEGIN Cloudflare Managed content".
-# Do not WAF-challenge Googlebot on /landing/.
+# Do not WAF-challenge verified search crawlers on public pages or assets.
 
-# Google Search may read the lightweight HTML pages. It does not need the
-# hashed wallet JavaScript under /assets/.
+# Google Search needs CSS, images, and JavaScript to render the same pages
+# visitors see. The group is separate from the training-crawler policy below.
 User-agent: Googlebot
 Allow: /landing
 Allow: /llms.txt
@@ -12,7 +12,8 @@ Allow: /sitemap.xml
 Allow: /icons/
 Allow: /favicon
 Allow: /og-image.png
-Disallow: /assets/
+Allow: /assets/
+Allow: /networkIcons/
 Disallow: /legal/third-party/
 
 # Training crawlers may not use this site to train models.

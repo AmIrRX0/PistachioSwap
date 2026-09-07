@@ -21,7 +21,7 @@ const APP_LINKS = [
 
 const PRODUCT_LINKS = [
     {
-        href: '/landing/#wallet',
+        href: '/landing/wallet/',
         label: 'Pistachio Wallet',
         description: 'Self-custody wallet',
         Icon: WalletCards,
@@ -29,7 +29,7 @@ const PRODUCT_LINKS = [
     {
         href: '/landing/gas-assist/',
         label: 'Gas Assist',
-        description: 'Swap without gas',
+        description: 'Swap without holding BNB',
         Icon: Fuel,
     },
 ]
@@ -41,6 +41,7 @@ const PROTOCOL_LINKS = [
 
 const COMPANY_LINKS = [
     { href: '/landing/', label: 'About' },
+    { href: '/landing/how-it-works/', label: 'How Pistachio Swap works' },
     { href: '/landing/faq/', label: 'FAQ' },
 ]
 

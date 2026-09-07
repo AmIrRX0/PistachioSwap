@@ -1,11 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
-    BOT_USER_AGENT_NAMES,
-    isBotUserAgent,
-    shouldServeLandingHtml,
-} from './botUserAgent.js'
-import {
     API_NO_STORE,
     ASSET_CACHE_CONTROL,
     cacheControlForPath,
@@ -20,26 +15,6 @@ import {
     resetWalletRuntime,
     warmWalletRuntime,
 } from './walletRuntime.js'
-
-describe('crawler detection', () => {
-    it('sends Google and assistants to landing HTML at /', () => {
-        expect(isBotUserAgent('Mozilla/5.0 Googlebot/2.1')).toBe(true)
-        expect(isBotUserAgent('ChatGPT-User/1.0')).toBe(true)
-        expect(isBotUserAgent('Mozilla/5.0 Chrome/120')).toBe(false)
-        expect(shouldServeLandingHtml({
-            userAgent: 'Googlebot',
-            pathname: '/',
-        })).toBe(true)
-        expect(shouldServeLandingHtml({
-            userAgent: 'Googlebot',
-            pathname: '/landing/',
-        })).toBe(false)
-        expect(shouldServeLandingHtml({
-            userAgent: 'Mozilla/5.0 Chrome/120',
-            pathname: '/',
-        })).toBe(false)
-    })
-})
 
 describe('origin cache headers', () => {
     it('caches hashed assets for a year and icons for a week', () => {
@@ -128,15 +103,15 @@ describe('wallet runtime loader', () => {
 })
 
 describe('edge configs stay aligned', () => {
-    it('lists the same crawlers in nginx and the Cloudflare worker', async () => {
+    it('serves the same document to crawlers and visitors with cache policies intact', async () => {
         const { readFileSync } = await import('node:fs')
         const nginx = readFileSync('deploy/nginx-origin-cache.conf', 'utf8')
         const worker = readFileSync('deploy/cloudflare-cache-and-crawlers.js', 'utf8')
 
-        for (const name of BOT_USER_AGENT_NAMES) {
-            expect(nginx).toContain(name)
-            expect(worker).toContain(name)
-        }
+        expect(nginx).not.toContain('$http_user_agent')
+        expect(worker).not.toContain('BOT_USER_AGENT_PATTERN')
+        expect(nginx).toContain('try_files /index.html =404;')
+        expect(nginx).toContain('try_files $uri $uri/ =404;')
         expect(nginx).toContain('max-age=31536000')
         expect(nginx).toContain('immutable')
         expect(nginx).toContain('max-age=604800')

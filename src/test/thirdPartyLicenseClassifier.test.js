@@ -66,7 +66,7 @@ describe('third-party packaged license classification', () => {
         }).label).toBe('Unlicense / public domain dedication')
     })
 
-    it('uses ordinary declared licenses but blocks unresolved SEE LICENSE metadata', () => {
+    it('uses ordinary declared licenses and keeps unrecognized installed terms explicit', () => {
         expect(classifyPackagedLicense({
             declaredLicense: 'BSD-3-Clause',
             licenseText: 'Copyright holder notice',
@@ -78,6 +78,16 @@ describe('third-party packaged license classification', () => {
         expect(classifyPackagedLicense({
             declaredLicense: 'SEE LICENSE IN LICENSE.md',
             licenseText: 'Some unrecognized custom terms',
+        })).toEqual({
+            kind: 'documented',
+            group: 'other',
+            label: 'See included license file',
+            requiredNotice: null,
+        })
+
+        expect(classifyPackagedLicense({
+            declaredLicense: 'SEE LICENSE IN LICENSE.md',
+            licenseText: '',
         })).toMatchObject({
             kind: 'unresolved',
             label: 'Unresolved license',

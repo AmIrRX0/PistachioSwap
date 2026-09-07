@@ -123,7 +123,9 @@ describe('direct browser wallet history', () => {
         const fetchMock = vi.fn(async (input, options = {}) => {
             const url = String(input)
             expect(url).not.toContain('pistachioswap.com/api')
-            if (url.startsWith('https://5000.insight.thirdweb.com/')) {
+            if (url.startsWith('https://insight.thirdweb.com/')) {
+                const parsed = new URL(url)
+                expect(parsed.searchParams.getAll('chain_id')).toEqual(['5000'])
                 return jsonResponse({
                     data: [],
                     meta: { page: 0, limit: 100, total_pages: 0 },
@@ -154,7 +156,7 @@ describe('direct browser wallet history', () => {
             source: 'thirdweb-browser',
         })
         expect(fetchMock.mock.calls.some(([url]) =>
-            String(url).startsWith('https://5000.insight.thirdweb.com/')))
+            String(url).startsWith('https://insight.thirdweb.com/')))
             .toBe(true)
     })
 

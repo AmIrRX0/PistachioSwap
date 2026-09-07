@@ -39,10 +39,28 @@ function cleanAmount(value) {
     return /^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text) ? text : null
 }
 
+function cleanLogoCandidates(token) {
+    const values = [
+        ...(Array.isArray(token?.logoCandidates) ? token.logoCandidates : []),
+        token?.logoURI,
+        token?.logoUri,
+        token?.logo,
+        token?.thumbnail,
+    ]
+    const seen = new Set()
+    return values.flatMap((value) => {
+        const logo = cleanText(value, 500)
+        if (!logo || seen.has(logo)) return []
+        seen.add(logo)
+        return [logo]
+    }).slice(0, 12)
+}
+
 function cleanToken(token) {
     if (!token || typeof token !== 'object' || Array.isArray(token)) return null
     const address = String(token.address ?? '').trim().toLowerCase()
     const validAddress = /^0x[a-f0-9]{40}$/.test(address) ? address : null
+    const logoCandidates = cleanLogoCandidates(token)
 
     return {
         address: validAddress,
@@ -86,14 +104,8 @@ function cleanToken(token) {
         includeInPortfolioValue: typeof token.includeInPortfolioValue === 'boolean'
             ? token.includeInPortfolioValue
             : undefined,
-        logoURI:
-            cleanText(
-                token.logoURI ??
-                token.logoUri ??
-                token.logo ??
-                token.thumbnail,
-                500,
-            ),
+        logoURI: logoCandidates[0] ?? null,
+        logoCandidates,
     }
 }
 

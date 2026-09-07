@@ -1,0 +1,69 @@
+name: Apply official fallback token icon fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-official-fallback-icons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Patch official fallback token icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+
+          source = Path('apps/api/src/token-discovery/fallback-token-catalog.ts')
+          text = source.read_text()
+
+          old_import = """} from '../lib/address.js'\nimport {\n    ACTIVE_TOKEN_DISCOVERY_CHAINS,"""
+          new_import = """} from '../lib/address.js'\nimport { getOfficialAsset } from '../providers/recognition/curated-token-lists.js'\nimport {\n    ACTIVE_TOKEN_DISCOVERY_CHAINS,"""
+          if old_import not in text:
+              raise SystemExit('fallback catalog import anchor not found')
+          text = text.replace(old_import, new_import, 1)
+
+          old_block = """    const chain = getTokenDiscoveryChain(record.chainId)\n    const canonicalId = createTokenId(record.chainId, canonicalAddress)\n    const logoCandidates = [...new Set([\n        ...record.logoCandidates,\n        record.logoURI,\n        '/icons/token-fallback.svg',\n    ].filter((value) => typeof value === 'string' && value.length > 0))]\n    return {\n        ...record,\n        id: canonicalId,\n        canonicalId,\n        address: canonicalAddress,\n        logoURI: logoCandidates[0] ?? '/icons/token-fallback.svg',\n        logoCandidates,\n        chainLogoURI: chain?.chainLogoURI ?? null,"""
+          new_block = """    const chain = getTokenDiscoveryChain(record.chainId)\n    const canonicalId = createTokenId(record.chainId, canonicalAddress)\n    const officialAsset = getOfficialAsset(record.chainId, canonicalAddress)\n    const logoCandidates = [...new Set([\n        ...(officialAsset?.logoCandidates ?? []),\n        ...record.logoCandidates,\n        record.logoURI,\n        '/icons/token-fallback.svg',\n    ].filter((value) => typeof value === 'string' && value.length > 0))]\n    return {\n        ...record,\n        id: canonicalId,\n        canonicalId,\n        address: canonicalAddress,\n        logoURI: logoCandidates[0] ?? '/icons/token-fallback.svg',\n        logoCandidates,\n        iconSource: officialAsset ? 'curated' : record.iconSource,\n        chainLogoURI: chain?.chainLogoURI ?? null,"""
+          if old_block not in text:
+              raise SystemExit('fallback catalog logo anchor not found')
+          text = text.replace(old_block, new_block, 1)
+          source.write_text(text)
+
+          test = Path('apps/api/test/fallback-token-catalog.test.ts')
+          test_text = test.read_text()
+          record_end = """    directoryStatus: 'listed',\n}\n\ndescribe('fallback token catalog loader', () => {"""
+          record_insert = """    directoryStatus: 'listed',\n}\n\nconst optimismUsdcRecord = {\n    ...record,\n    chainId: 10,\n    address: '0x0b2c639c533813f4aa9d7837caf62653d097ff85',\n    name: 'USD Coin',\n    symbol: 'USDC',\n    logoURI: '/icons/token-fallback.svg',\n    logoCandidates: ['/icons/token-fallback.svg'],\n    coinGeckoId: 'usd-coin',\n    iconSource: null,\n}\n\ndescribe('fallback token catalog loader', () => {"""
+          if record_end not in test_text:
+              raise SystemExit('fallback catalog test record anchor not found')
+          test_text = test_text.replace(record_end, record_insert, 1)
+
+          test_anchor = """    it('looks up exact fallback records by normalized address', async () => {"""
+          test_case = """    it('upgrades official fallback-only icons to curated asset logos', async () => {\n        await loadFallbackTokenCatalog({ recordsForTest: [optimismUsdcRecord] })\n        const token = await getFallbackToken(10, optimismUsdcRecord.address)\n        expect(token).toMatchObject({\n            symbol: 'USDC',\n            iconSource: 'curated',\n        })\n        expect(token?.logoURI).toContain('raw.githubusercontent.com/trustwallet/assets')\n        expect(token?.logoURI).toContain('/blockchains/optimism/assets/')\n        expect(token?.logoCandidates[0]).toBe(token?.logoURI)\n    })\n\n    it('looks up exact fallback records by normalized address', async () => {"""
+          if test_anchor not in test_text:
+              raise SystemExit('fallback catalog test case anchor not found')
+          test_text = test_text.replace(test_anchor, test_case, 1)
+          test.write_text(test_text)
+          PY
+
+      - name: Remove one-time workflow and commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/fix-official-fallback-icons.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/api/src/token-discovery/fallback-token-catalog.ts apps/api/test/fallback-token-catalog.test.ts .github/workflows/fix-official-fallback-icons.yml
+          git commit -m 'fix: restore official token icons in fallback search'
+          git push origin HEAD:main

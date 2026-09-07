@@ -177,26 +177,14 @@ function metadataEvidence(row) {
     return timestamp ? { metadata: { blockTimestamp: timestamp } } : null
 }
 
-function metadataObject(row) {
-    if (row?.token_metadata && typeof row.token_metadata === 'object') {
-        return row.token_metadata
-    }
-    if (row?.metadata && typeof row.metadata === 'object') return row.metadata
-    return {}
-}
-
 function tokenEvidence(row) {
     const token = row?.token && typeof row.token === 'object' ? row.token : {}
-    const tokenMetadata = metadataObject(row)
     const address = String(
-        row?.contract_address ?? row?.token_address ?? token.address ??
-        tokenMetadata.address ?? tokenMetadata.contract_address ?? '',
+        row?.contract_address ?? row?.token_address ?? token.address ?? '',
     ).trim().toLowerCase()
     if (!/^0x[a-f0-9]{40}$/.test(address)) return metadataEvidence(row)
-    const decimals = row?.token_decimals ?? row?.decimals ?? token.decimals ??
-        tokenMetadata.decimals
-    const symbol = row?.token_symbol ?? row?.symbol ?? token.symbol ??
-        tokenMetadata.symbol
+    const decimals = row?.token_decimals ?? row?.decimals ?? token.decimals
+    const symbol = row?.token_symbol ?? row?.symbol ?? token.symbol
     return {
         rawContract: {
             address,
@@ -230,6 +218,7 @@ async function discoverThirdwebEvidence({ chainId, walletAddress, fromBlock, sig
             chainId,
             path: `/v1/wallets/${wallet}/transactions`,
             query: {
+                chain_id: chainId,
                 sort_by: 'block_number',
                 sort_order: 'desc',
                 ...(fromBlock > 0 ? { filter_block_number_gte: fromBlock } : {}),
@@ -240,8 +229,10 @@ async function discoverThirdwebEvidence({ chainId, walletAddress, fromBlock, sig
             chainId,
             path: '/v1/tokens/transfers',
             query: {
+                chain_id: chainId,
                 owner_address: wallet,
-                token_type: 'erc20',
+                token_types: 'erc20',
+                metadata: true,
                 sort_order: 'desc',
                 ...(fromBlock > 0 ? { block_number_from: fromBlock } : {}),
             },
@@ -352,7 +343,6 @@ export const thirdwebWalletHistoryInternals = {
     configuredThirdwebClientId,
     insightOrigin,
     isoTimestamp,
-    metadataObject,
     normalizeHash,
     pageInfo,
     rpcUrl,

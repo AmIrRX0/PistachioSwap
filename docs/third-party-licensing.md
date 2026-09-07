@@ -16,8 +16,8 @@ Before a public deployment or distributed build:
 2. Run `pnpm licenses:audit`.
 3. Review `.license-audit/production.txt` and `.license-audit/review-required.md`.
 4. Resolve every blocking or unknown entry, using `pnpm licenses:evidence` when package metadata is incomplete.
-5. Preserve required notices and exact license texts in the distributed product.
-6. Recheck Reown, WalletConnect, and MetaMask terms, usage thresholds, attribution, and infrastructure requirements.
+5. Run `pnpm licenses:sync` and preserve the generated exact package license files and package-specific required notices in the distributed product.
+6. Recheck Reown, WalletConnect, and MetaMask terms, usage thresholds, attribution, and infrastructure requirements for the exact installed versions that use custom terms.
 7. Record whether any LGPL or MPL dependency was modified, bundled, or distributed.
 
 A successful build is not a license audit. Software remains entirely capable of compiling while carrying awkward legal baggage, one of its more human qualities.
@@ -42,25 +42,38 @@ MPL is file-level copyleft. Separate PistachioSwap files can remain under PolyFo
 
 Fonts retain their own font licenses. Preserve the Ubuntu Font License and required notices for `@fontsource/ubuntu` in distributed frontend assets.
 
-### Reown and WalletConnect community licenses
+### Reown AppKit and WalletConnect community licenses
 
-Reown AppKit and WalletConnect packages are custom-licensed components. Their licenses require attribution and license copies, contain infrastructure conditions, and can require a commercial agreement after usage thresholds are exceeded.
+Installed Reown AppKit packages and specific WalletConnect runtime packages can be governed by the Reown or WalletConnect Community License rather than a permissive license. Do **not** infer that every `@walletconnect/*` or every package from a vendor shares the same terms. The exact installed package license controls.
 
-The application must expose the following attribution in an About, Legal, or Notices surface before public launch:
+When an installed package's license text is the Reown or WalletConnect Community License, the distributed notices surface must include the required attribution:
 
 > Portions © 2025 Reown, Inc. All Rights Reserved.
 
-Do not modify Reown or WalletConnect package source without separate review. The exact license shipped with the installed package version controls.
+The notice generator must list the exact installed packages to which that attribution applies and link the exact license files copied from those package versions. Community-license terms can also contain infrastructure, redistribution, modification, and commercial-use conditions. Recheck the exact installed text before release or a material traffic increase rather than hard-coding a threshold from a different release.
 
-### MetaMask Connect license
+### MetaMask / ConsenSys licenses
 
-The installed MetaMask Connect packages use a ConsenSys custom license, not MIT. It requires prominent notice, applies a matching use restriction to the resulting program, and currently defines permitted use to include applications at or below 10,000 monthly active users.
+MetaMask packages do **not** all use one license. Some installed packages use common permissive licenses such as MIT or ISC, while selected MetaMask Connect packages ship ConsenSys custom terms.
 
-The production legal-notices page must include:
+When the exact installed package license contains the ConsenSys custom terms, the notices surface must preserve the applicable copyright notice and identify the packages to which it applies:
 
-> PistachioSwap uses MetaMask Connect components. Copyright ConsenSys Software Inc. 2022. All rights reserved.
+> Copyright ConsenSys Software Inc. 2022. All rights reserved.
 
-Do not exceed 10,000 monthly active users or rely on another use case without obtaining separate permission from MetaMask/ConsenSys. PistachioSwap's owner-controlled commercial license cannot override this dependency restriction.
+Do not put that custom-license notice above every `@metamask/*` package. Permissively licensed MetaMask packages must remain labeled with their own license instead. The exact custom license may impose use, redistribution, notice, or traffic conditions that PistachioSwap's owner-controlled commercial license cannot override.
+
+### Generated production notice page
+
+`scripts/sync-third-party-license-files.mjs` scans the exact installed targeted packages during the build. It must:
+
+- copy each installed package's own `LICENSE`, `COPYING`, or `NOTICE` files verbatim;
+- classify custom Reown, WalletConnect, and MetaMask terms from the installed license text, not merely from the vendor scope;
+- show required attributions only for the exact packages whose license text requires them;
+- label standard MIT, ISC, Apache, BSD, Unlicense, and similar packages using their own terms or package metadata;
+- publish an exact-but-unclassified installed license as `See included license file` rather than guessing a family-level license; and
+- fail when a targeted installed package does not contain license or notice material to publish.
+
+The generated `index.json` is the machine-readable record tying each published license file and required notice to an exact package and version.
 
 ### Incomplete package metadata
 
@@ -70,7 +83,8 @@ The current review resolved several misleading `Unknown` entries using exact ins
 
 - `eyes@0.1.8` includes the MIT License.
 - `text-encoding-utf-8@1.0.2` includes a public-domain dedication and Unlicense notice.
-- selected MetaMask packages include the ConsenSys custom license.
+- selected MetaMask packages include the ConsenSys custom license, while other MetaMask packages are permissively licensed.
+- selected Reown AppKit and WalletConnect packages include Community License files, while other WalletConnect packages may use standard licenses.
 - Chainflip toolkit subpackages omit package-level license metadata, while the exact upstream toolkit root declares ISC.
 
 These resolutions are version-specific. The audit must re-evaluate them after dependency updates instead of assuming package names remain legally frozen in amber.
@@ -79,7 +93,7 @@ These resolutions are version-specific. The audit must re-evaluate them after de
 
 Package-specific exceptions must include:
 
-- the exact package or package-family pattern;
+- the exact package or narrowly scoped package-family pattern;
 - the reviewed license classification;
 - a short reason;
 - the required operational or distribution conditions; and

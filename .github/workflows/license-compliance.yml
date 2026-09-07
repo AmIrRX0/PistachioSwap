@@ -14,6 +14,8 @@ on:
       - 'scripts/audit-third-party-licenses.mjs'
       - 'scripts/collect-third-party-license-evidence.mjs'
       - 'scripts/sync-third-party-license-files.mjs'
+      - 'scripts/third-party-license-classifier.mjs'
+      - 'src/test/thirdPartyLicenseClassifier.test.js'
       - 'src/app/AppLayout.jsx'
   push:
     branches: [main]
@@ -29,6 +31,8 @@ on:
       - 'scripts/audit-third-party-licenses.mjs'
       - 'scripts/collect-third-party-license-evidence.mjs'
       - 'scripts/sync-third-party-license-files.mjs'
+      - 'scripts/third-party-license-classifier.mjs'
+      - 'src/test/thirdPartyLicenseClassifier.test.js'
       - 'src/app/AppLayout.jsx'
   workflow_dispatch:
 
@@ -52,13 +56,18 @@ jobs:
           node --check scripts/audit-third-party-licenses.mjs
           node --check scripts/collect-third-party-license-evidence.mjs
           node --check scripts/sync-third-party-license-files.mjs
+          node --check scripts/third-party-license-classifier.mjs
+      - name: Test license classification
+        run: pnpm exec vitest run src/test/thirdPartyLicenseClassifier.test.js
       - name: Generate bundled license notices
         run: |
           pnpm licenses:sync
           test -f public/legal/third-party/index.html
+          test -f public/legal/third-party/index.json
           test -f public/legal/third-party/NOTICE.txt
           grep -F 'Portions © 2025 Reown, Inc. All Rights Reserved.' public/legal/third-party/NOTICE.txt
           grep -F 'Copyright ConsenSys Software Inc. 2022. All rights reserved.' public/legal/third-party/NOTICE.txt
+          grep -F 'Applies to these installed packages:' public/legal/third-party/NOTICE.txt
       - name: Build frontend with notices
         run: pnpm build
       - name: Generate dependency audit report

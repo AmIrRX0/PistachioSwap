@@ -7,6 +7,7 @@ const PAGE_SIZE = 100
 const MAX_PAGES = 5
 const HYDRATION_BATCH_SIZE = 8
 const MAX_ACTIVITIES = 200
+const INSIGHT_ORIGIN = 'https://insight.thirdweb.com'
 
 function viteEnv() {
     return import.meta.env ?? {}
@@ -53,8 +54,8 @@ export function thirdwebHistoryConfigured() {
     return configuredThirdwebClientId().length > 0
 }
 
-function insightOrigin(chainId) {
-    return `https://${Number(chainId)}.insight.thirdweb.com`
+function insightOrigin() {
+    return INSIGHT_ORIGIN
 }
 
 function rpcUrl(chainId) {
@@ -97,15 +98,22 @@ async function fetchJson(url, options, signal) {
     throw new Error('Thirdweb browser history is unavailable.')
 }
 
+function appendQueryParams(url, query) {
+    for (const [name, rawValue] of Object.entries(query ?? {})) {
+        const values = Array.isArray(rawValue) ? rawValue : [rawValue]
+        for (const value of values) {
+            if (value !== undefined && value !== null && value !== '') {
+                url.searchParams.append(name, String(value))
+            }
+        }
+    }
+}
+
 async function insightRequest(chainId, path, query, signal) {
     const clientId = configuredThirdwebClientId()
     if (!clientId) throw new Error('Thirdweb browser history is not configured.')
     const url = new URL(path, insightOrigin(chainId))
-    for (const [name, value] of Object.entries(query ?? {})) {
-        if (value !== undefined && value !== null && value !== '') {
-            url.searchParams.set(name, String(value))
-        }
-    }
+    appendQueryParams(url, query)
     return fetchJson(url, {
         headers: {
             accept: 'application/json',
@@ -179,12 +187,17 @@ function metadataEvidence(row) {
 
 function tokenEvidence(row) {
     const token = row?.token && typeof row.token === 'object' ? row.token : {}
+    const tokenMetadata = row?.token_metadata && typeof row.token_metadata === 'object'
+        ? row.token_metadata
+        : {}
     const address = String(
         row?.contract_address ?? row?.token_address ?? token.address ?? '',
     ).trim().toLowerCase()
     if (!/^0x[a-f0-9]{40}$/.test(address)) return metadataEvidence(row)
-    const decimals = row?.token_decimals ?? row?.decimals ?? token.decimals
-    const symbol = row?.token_symbol ?? row?.symbol ?? token.symbol
+    const decimals = row?.token_decimals ?? row?.decimals ?? token.decimals ??
+        tokenMetadata.decimals
+    const symbol = row?.token_symbol ?? row?.symbol ?? token.symbol ??
+        tokenMetadata.symbol
     return {
         rawContract: {
             address,
@@ -218,7 +231,7 @@ async function discoverThirdwebEvidence({ chainId, walletAddress, fromBlock, sig
             chainId,
             path: `/v1/wallets/${wallet}/transactions`,
             query: {
-                chain_id: chainId,
+                chain_id: [chainId],
                 sort_by: 'block_number',
                 sort_order: 'desc',
                 ...(fromBlock > 0 ? { filter_block_number_gte: fromBlock } : {}),
@@ -229,10 +242,10 @@ async function discoverThirdwebEvidence({ chainId, walletAddress, fromBlock, sig
             chainId,
             path: '/v1/tokens/transfers',
             query: {
-                chain_id: chainId,
+                chain_id: [chainId],
                 owner_address: wallet,
-                token_types: 'erc20',
-                metadata: true,
+                token_types: ['erc20'],
+                metadata: 'true',
                 sort_order: 'desc',
                 ...(fromBlock > 0 ? { block_number_from: fromBlock } : {}),
             },
@@ -340,6 +353,7 @@ export const thirdwebWalletHistoryInternals = {
     MAX_ACTIVITIES,
     MAX_PAGES,
     PAGE_SIZE,
+    appendQueryParams,
     configuredThirdwebClientId,
     insightOrigin,
     isoTimestamp,

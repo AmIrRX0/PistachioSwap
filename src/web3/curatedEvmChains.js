@@ -28,6 +28,7 @@ import {
 
 export const DEFAULT_CHAIN_ID = 56
 export const MEGAFUEL_CHAIN_ID = 56
+export const BNB_CHAIN_LOGO_URI = '/assets/bnb-logo-Ujb8xjX_.png'
 export const CANONICAL_NATIVE_TOKEN_ADDRESS =
     '0x0000000000000000000000000000000000000000'
 
@@ -66,7 +67,6 @@ export const WRAPPED_NATIVE_TOKEN_ADDRESSES = Object.freeze({
 
 const CHAIN_ICON_FILES = Object.freeze({
     1: 'ethereum.svg',
-    56: 'bsc.webp',
     137: 'polygon.webp',
     42161: 'arbitrum.webp',
     10: 'optimism.webp',
@@ -182,6 +182,7 @@ export function getCanonicalTokenAddress(chainId, address) {
 }
 
 export function getCuratedEvmChainLogoUri(chainId) {
+    if (Number(chainId) === 56) return BNB_CHAIN_LOGO_URI
     const fileName = CHAIN_ICON_FILES[Number(chainId)]
     return fileName
         ? `${CHAIN_ICON_BASE_PATH}/${fileName}`

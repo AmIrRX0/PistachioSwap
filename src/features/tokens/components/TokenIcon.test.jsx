@@ -60,13 +60,13 @@ describe('TokenIcon', () => {
         expect(container.querySelector('.ps-token-logo-skeleton')).toBeNull()
     })
 
-    it('shows only the chain logo in the network selector, not a letter behind it', () => {
+    it('shows only the canonical yellow BNB logo in the network selector', () => {
         const { container } = render(
             <ChainIcon chainId={56} name="BNB Smart Chain" />,
         )
         const icon = container.querySelector('.ps-chain-icon')
         expect(icon.querySelector('img')).not.toBeNull()
-        expect(icon.querySelector('img').getAttribute('src')).toBe('/networkIcons/bsc.webp')
+        expect(icon.querySelector('img').getAttribute('src')).toBe('/assets/bnb-logo-Ujb8xjX_.png')
         expect(icon.textContent).toBe('')
     })
 })

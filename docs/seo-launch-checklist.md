@@ -41,10 +41,10 @@ Local regression commands:
 ```sh
 pnpm test
 pnpm build
-pnpm test:seo-build
+node scripts/check-public-seo.mjs
 ```
 
-The SEO build check verifies actual built HTML, unique metadata, JSON-LD, sitemap, guide links, local resources, and fragment targets. CI runs it after building. It cannot verify the deployed edge, indexing, or real passkey/device compatibility.
+The standalone SEO build check verifies actual built HTML, unique metadata, JSON-LD, sitemap, guide links, local resources, and fragment targets. Run it after building. CI already runs the source-level guide and edge tests. This PR does not change the owner-protected build configuration. These checks cannot verify the deployed edge, indexing, or real passkey/device compatibility.
 
 ## Site-owner steps in Google Search Console
 

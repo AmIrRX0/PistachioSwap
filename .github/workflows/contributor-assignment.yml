@@ -3,38 +3,109 @@ name: Contributor Assignment Agreement
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+  issue_comment:
+    types: [created, edited, deleted]
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
 
 jobs:
   verify-acceptance:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     name: Verify CAA v1.2 acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Verify contributor acceptance checkbox
+      - name: Verify PR-author acceptance
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
         run: |
           node <<'NODE'
-          const body = process.env.PR_BODY || '';
-          const author = process.env.PR_AUTHOR || 'unknown';
+          const token = process.env.GH_TOKEN;
+          const apiUrl = process.env.GITHUB_API_URL;
+          const repository = process.env.REPOSITORY;
+          const prNumber = Number(process.env.PR_NUMBER);
 
-          const required =
+          const checkboxStatement =
             'I have read and agree to the PistachioSwap Contributor Assignment Agreement Version 1.2. By checking this box from my authenticated GitHub account, I intend this action to serve as my electronic signature. I confirm that I own or control the rights I am assigning, have authority to assign them, and understand that this Agreement covers my applicable existing and future PistachioSwap Contributions as described in the Agreement.';
 
-          const accepted = body
-            .split(/\r?\n/)
-            .some((line) => /^\s*-\s*\[[xX]\]\s+/.test(line) && line.includes(required));
+          const commentStatement =
+            'I have read and agree to the PistachioSwap Contributor Assignment Agreement Version 1.2. I am the person controlling the GitHub account that opened this pull request. By posting this comment from that authenticated GitHub account, I intend this comment to serve as my electronic signature. I confirm that I own or control the rights I am assigning, have authority to assign them, and understand that this Agreement covers my applicable existing and future PistachioSwap Contributions as described in the Agreement.';
 
-          if (!accepted) {
-            console.error(`CAA v1.2 has not been accepted by @${author}.`);
-            console.error('Open the pull request description, read the Contributor Assignment Agreement, and personally check the CAA acceptance box.');
-            console.error('The exact Version 1.2 acceptance statement must remain unchanged.');
+          if (!token || !apiUrl || !repository || !Number.isSafeInteger(prNumber)) {
+            throw new Error('Missing GitHub event context needed to verify CAA acceptance.');
+          }
+
+          const headers = {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+          };
+
+          async function githubGet(path) {
+            const response = await fetch(`${apiUrl}${path}`, { headers });
+            if (!response.ok) {
+              throw new Error(`GitHub API ${response.status} for ${path}`);
+            }
+            return response.json();
+          }
+
+          async function listComments() {
+            const comments = [];
+            for (let page = 1; ; page += 1) {
+              const batch = await githubGet(
+                `/repos/${repository}/issues/${prNumber}/comments?per_page=100&page=${page}`,
+              );
+              comments.push(...batch);
+              if (batch.length < 100) return comments;
+            }
+          }
+
+          const pr = await githubGet(`/repos/${repository}/pulls/${prNumber}`);
+          const authorLogin = pr.user?.login;
+          const authorId = pr.user?.id;
+
+          if (!authorLogin || !Number.isSafeInteger(authorId)) {
+            throw new Error('Could not identify the pull request author.');
+          }
+
+          const body = pr.body || '';
+          const checkboxAccepted = body
+            .split(/\r?\n/)
+            .some((line) =>
+              /^\s*-\s*\[[xX]\]\s+/.test(line) &&
+              line.includes(checkboxStatement),
+            );
+
+          if (!checkboxAccepted) {
+            console.error(`CAA v1.2 checkbox has not been accepted in PR #${prNumber} by @${authorLogin}.`);
+            console.error('The pull request author must personally check the exact CAA v1.2 acceptance box in the PR description.');
             process.exit(1);
           }
 
-          console.log(`CAA v1.2 acceptance found for @${author}.`);
+          const comments = await listComments();
+          const acceptance = comments.find((comment) =>
+            comment.user?.id === authorId &&
+            comment.user?.login === authorLogin &&
+            comment.user?.type === 'User' &&
+            String(comment.body || '').trim() === commentStatement,
+          );
+
+          if (!acceptance) {
+            console.error(`CAA v1.2 acceptance comment from PR author @${authorLogin} was not found.`);
+            console.error('The PR author must personally post the exact acceptance statement from the same authenticated GitHub account that opened the PR.');
+            console.error('Acceptance comments from maintainers, bots, or any other account do not count.');
+            process.exit(1);
+          }
+
+          console.log(`CAA v1.2 accepted by PR author @${authorLogin} (GitHub user id ${authorId}).`);
+          console.log(`Acceptance comment: ${acceptance.html_url}`);
+          console.log(`Acceptance timestamp: ${acceptance.created_at}`);
           NODE

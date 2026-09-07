@@ -1,25 +1,3 @@
-import { useEffect, useState } from 'react'
-
-const legalFooterStyle = {
-    padding: '2rem 1rem 1.25rem',
-    color: 'var(--color-text-secondary, currentColor)',
-    fontSize: '0.75rem',
-    opacity: 0.72,
-    textAlign: 'center',
-}
-
-const legalLinkStyle = {
-    color: 'inherit',
-    textDecoration: 'none',
-}
-
-const legalSeparatorStyle = {
-    margin: '0 0.5rem',
-    opacity: 0.5,
-}
-
-const showLegalFooter = import.meta.env.PROD
-
 /**
  * Provides the existing top-level application shell and CSS-variable boundary.
  * @param {{style: object, header: import('react').ReactNode, children: import('react').ReactNode, overlays: import('react').ReactNode}} props Layout slots.
@@ -27,40 +5,23 @@ const showLegalFooter = import.meta.env.PROD
  * @sideEffects None; child slots own their interactions.
  */
 export default function AppLayout({ style, header, children, overlays }) {
-    const [footerReady, setFooterReady] = useState(false)
-
-    useEffect(() => {
-        setFooterReady(true)
-    }, [])
-
     return (
         <main className="app-shell" style={style}>
             {header}
             {children}
-            {showLegalFooter && footerReady && (
-                <footer style={legalFooterStyle}>
-                    {/*
-                      * The overview page is otherwise unreachable from the
-                      * application, which would leave it orphaned for crawlers
-                      * and for anyone wanting to read what this does first.
-                      */}
-                    <a href="/landing/" style={legalLinkStyle}>
-                        About Pistachio Swap
-                    </a>
-                    <span style={legalSeparatorStyle} aria-hidden="true">·</span>
-                    <a href="/landing/gas-assist/" style={legalLinkStyle}>
-                        How Gas Assist works
-                    </a>
-                    <span style={legalSeparatorStyle} aria-hidden="true">·</span>
-                    <a href="/landing/faq/" style={legalLinkStyle}>
-                        FAQ
-                    </a>
-                    <span style={legalSeparatorStyle} aria-hidden="true">·</span>
-                    <a href="/legal/third-party/" style={legalLinkStyle}>
-                        Legal &amp; third-party notices
-                    </a>
-                </footer>
-            )}
+            {/* Keep this public content in sync with the static index.html footer. */}
+            <footer className="app-info-footer" aria-label="About Pistachio Swap">
+                <h1>Pistachio Swap</h1>
+                <p>Compare crypto swap routes with a self-custodial wallet. Gas Assist is available for eligible BNB Chain swaps; costs apply.</p>
+                <nav aria-label="Product guides">
+                    <a href="/landing/">About</a>
+                    <a href="/landing/wallet/">Pistachio Wallet</a>
+                    <a href="/landing/gas-assist/">Gas Assist</a>
+                    <a href="/landing/how-it-works/">How Pistachio Swap works</a>
+                    <a href="/landing/faq/">FAQ</a>
+                    <a href="/legal/third-party/">Legal &amp; third-party notices</a>
+                </nav>
+            </footer>
             {overlays}
         </main>
     )

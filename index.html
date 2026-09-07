@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Pistachio Swap | Self-Custodial Crypto Wallet</title>
+    <title>Pistachio Swap | Crypto Swaps &amp; Self-Custodial Wallet</title>
     <meta
       name="description"
-      content="Pistachio Swap is a self-custodial crypto wallet with Gas Assist: swap BEP-20 tokens on BNB Chain even with no BNB for gas, across 25 EVM networks."
+      content="Pistachio Swap compares crypto swap routes across EVM networks. Use Pistachio Wallet and eligible Gas Assist swaps on BNB Chain without already holding BNB."
     />
     <link rel="canonical" href="https://pistachioswap.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -24,11 +24,11 @@
     <meta property="og:url" content="https://pistachioswap.com/" />
     <meta
       property="og:title"
-      content="Pistachio Swap | Self-Custodial Crypto Wallet"
+      content="Pistachio Swap | Crypto Swaps &amp; Self-Custodial Wallet"
     />
     <meta
       property="og:description"
-      content="Pistachio Swap is a self-custodial crypto wallet with Gas Assist: swap BEP-20 tokens on BNB Chain even with no BNB for gas, across 25 EVM networks."
+      content="Pistachio Swap compares crypto swap routes across EVM networks. Use Pistachio Wallet and eligible Gas Assist swaps on BNB Chain without already holding BNB."
     />
     <meta property="og:image" content="https://pistachioswap.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
@@ -39,11 +39,11 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Pistachio Swap | Self-Custodial Crypto Wallet"
+      content="Pistachio Swap | Crypto Swaps &amp; Self-Custodial Wallet"
     />
     <meta
       name="twitter:description"
-      content="Pistachio Swap is a self-custodial crypto wallet with Gas Assist: swap BEP-20 tokens on BNB Chain even with no BNB for gas, across 25 EVM networks."
+      content="Pistachio Swap compares crypto swap routes across EVM networks. Use Pistachio Wallet and eligible Gas Assist swaps on BNB Chain without already holding BNB."
     />
     <meta name="twitter:image" content="https://pistachioswap.com/og-image.png" />
 
@@ -71,7 +71,7 @@
             "@id": "https://pistachioswap.com/#app",
             "name": "Pistachio Swap",
             "url": "https://pistachioswap.com/",
-            "description": "Pistachio Swap is a self-custodial crypto wallet with Gas Assist: swap BEP-20 tokens on BNB Chain even with no BNB for gas, across 25 EVM networks.",
+            "description": "Pistachio Swap compares crypto swap routes across EVM networks. Use Pistachio Wallet and eligible Gas Assist swaps on BNB Chain without already holding BNB.",
             "applicationCategory": "FinanceApplication",
             "operatingSystem": "Web browser",
             "browserRequirements": "Requires JavaScript and a secure context.",
@@ -156,6 +156,13 @@
         border-radius: 18px;
         background: #8ac27c;
       }
+      .app-info-footer { position: relative; padding: 2rem 1rem; background: var(--color-background, #191919); color: var(--color-text-secondary, #a9a9a9); font: 13px/1.6 system-ui, sans-serif; text-align: center; }
+      .app-info-footer h1 { margin: 0; color: #f4f4f4; font-size: 16px; font-weight: 600; }
+      .app-info-footer p { max-width: 580px; margin: 8px auto 12px; }
+      .app-info-footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; }
+      .app-info-footer a { display: inline-flex; align-items: center; min-height: 44px; color: #8ac27c; text-decoration: none; }
+      .app-info-footer a:hover { text-decoration: underline; }
+      .app-info-footer a:focus-visible { outline: 2px solid #8ac27c; outline-offset: 3px; }
     </style>
   </head>
   <body>
@@ -175,10 +182,22 @@
           <div class="app-boot-action"></div>
         </section>
       </div>
+      <footer class="app-info-footer" aria-label="About Pistachio Swap">
+        <h1>Pistachio Swap</h1>
+        <p>Compare crypto swap routes with a self-custodial wallet. Gas Assist is available for eligible BNB Chain swaps; costs apply.</p>
+        <nav aria-label="Product guides">
+          <a href="/landing/">About</a>
+          <a href="/landing/wallet/">Pistachio Wallet</a>
+          <a href="/landing/gas-assist/">Gas Assist</a>
+          <a href="/landing/how-it-works/">How Pistachio Swap works</a>
+          <a href="/landing/faq/">FAQ</a>
+          <a href="/legal/third-party/">Legal &amp; third-party notices</a>
+        </nav>
+      </footer>
     </div>
     <noscript>
       <div style="max-width: 40rem; margin: 12vh auto 0; padding: 0 1.5rem; color: #fff; font-family: system-ui, sans-serif; text-align: center;">
-        <h1 style="font-size: 1.5rem;">Pistachio Swap</h1>
+        <h2 style="font-size: 1.5rem;">Enable JavaScript to swap</h2>
         <p style="color: #a9a9a9; line-height: 1.5;">
           The swap interface needs JavaScript to talk to your wallet and to price
           routes. Enable JavaScript to continue, or read what Pistachio Swap does

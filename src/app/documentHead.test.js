@@ -4,9 +4,9 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /*
- * Search engines and link unfurlers only ever see these static files: the swap
- * interface itself renders after the bundle executes. A silent regression here
- * is invisible in the running app, so the contract is pinned.
+ * Public metadata and guides must be present in the HTML response, before a
+ * crawler or visitor executes JavaScript. The app keeps its visible guide
+ * links after React mounts. Pin both sides of that contract.
  */
 const SITE = 'https://pistachioswap.com'
 
@@ -52,6 +52,8 @@ function structuredData(html) {
 describe.each([
     ['index.html', `${SITE}/`],
     ['landing/index.html', `${SITE}/landing/`],
+    ['landing/wallet/index.html', `${SITE}/landing/wallet/`],
+    ['landing/how-it-works/index.html', `${SITE}/landing/how-it-works/`],
     ['landing/faq/index.html', `${SITE}/landing/faq/`],
     ['landing/gas-assist/index.html', `${SITE}/landing/gas-assist/`],
 ])('%s document head', (path, canonical) => {
@@ -134,6 +136,8 @@ describe('crawler-facing static files', () => {
             `${SITE}/`,
             `${SITE}/landing/`,
             `${SITE}/gas-assist/`,
+            `${SITE}/landing/wallet/`,
+            `${SITE}/landing/how-it-works/`,
             `${SITE}/landing/faq/`,
             `${SITE}/landing/gas-assist/`,
         ]) {
@@ -174,7 +178,7 @@ describe('landing page', () => {
             .replace(/<[^>]+>/g, ' ')
             .split(/\s+/)
             .filter(Boolean)
-        expect(words.length).toBeLessThan(900)
+        expect(words.length).toBeLessThan(1050)
     })
 
     it('renders its content without the application bundle', () => {

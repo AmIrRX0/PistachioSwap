@@ -23,6 +23,18 @@ const record = {
     directoryStatus: 'listed',
 }
 
+const optimismUsdcRecord = {
+    ...record,
+    chainId: 10,
+    address: '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
+    name: 'USD Coin',
+    symbol: 'USDC',
+    logoURI: '/icons/token-fallback.svg',
+    logoCandidates: ['/icons/token-fallback.svg'],
+    coinGeckoId: 'usd-coin',
+    iconSource: null,
+}
+
 describe('fallback token catalog loader', () => {
     it('rejects malformed generated records', () => {
         expect(() => validateFallbackTokenCatalogRecords([{ ...record, symbol: '' }]))
@@ -50,6 +62,18 @@ describe('fallback token catalog loader', () => {
             expect.objectContaining({ symbol: 'ETH', isNative: true }),
             expect.objectContaining({ symbol: 'WETH' }),
         ])
+    })
+
+    it('upgrades official fallback-only icons to curated asset logos', async () => {
+        await loadFallbackTokenCatalog({ recordsForTest: [optimismUsdcRecord] })
+        const token = await getFallbackToken(10, optimismUsdcRecord.address)
+        expect(token).toMatchObject({
+            symbol: 'USDC',
+            iconSource: 'curated',
+        })
+        expect(token?.logoURI).toContain('raw.githubusercontent.com/trustwallet/assets')
+        expect(token?.logoURI).toContain('/blockchains/optimism/assets/')
+        expect(token?.logoCandidates[0]).toBe(token?.logoURI)
     })
 
     it('looks up exact fallback records by normalized address', async () => {

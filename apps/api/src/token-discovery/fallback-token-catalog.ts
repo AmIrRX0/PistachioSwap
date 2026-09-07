@@ -6,6 +6,7 @@ import {
     createTokenId,
     normalizeAddress,
 } from '../lib/address.js'
+import { getOfficialAsset } from '../providers/recognition/curated-token-lists.js'
 import {
     ACTIVE_TOKEN_DISCOVERY_CHAINS,
     canonicalTokenAddress,
@@ -147,7 +148,9 @@ function createPublicFallbackRecord(
     const canonicalAddress = canonicalTokenAddress(record.chainId, record.address)
     const chain = getTokenDiscoveryChain(record.chainId)
     const canonicalId = createTokenId(record.chainId, canonicalAddress)
+    const officialAsset = getOfficialAsset(record.chainId, canonicalAddress)
     const logoCandidates = [...new Set([
+        ...(officialAsset?.logoCandidates ?? []),
         ...record.logoCandidates,
         record.logoURI,
         '/icons/token-fallback.svg',
@@ -159,6 +162,7 @@ function createPublicFallbackRecord(
         address: canonicalAddress,
         logoURI: logoCandidates[0] ?? '/icons/token-fallback.svg',
         logoCandidates,
+        iconSource: officialAsset ? 'curated' : record.iconSource,
         chainLogoURI: chain?.chainLogoURI ?? null,
         catalogSource: 'static-fallback',
         directoryStatus: 'listed',

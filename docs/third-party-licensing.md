@@ -69,8 +69,9 @@ Do not put that custom-license notice above every `@metamask/*` package. Permiss
 - copy each installed package's own `LICENSE`, `COPYING`, or `NOTICE` files verbatim;
 - classify custom Reown, WalletConnect, and MetaMask terms from the installed license text, not merely from the vendor scope;
 - show required attributions only for the exact packages whose license text requires them;
-- label standard MIT, ISC, Apache, BSD, Unlicense, and similar packages using their own terms or package metadata; and
-- fail instead of inventing a family-level license when a targeted installed package has missing or unresolved license material.
+- label standard MIT, ISC, Apache, BSD, Unlicense, and similar packages using their own terms or package metadata;
+- publish an exact-but-unclassified installed license as `See included license file` rather than guessing a family-level license; and
+- fail when a targeted installed package does not contain license or notice material to publish.
 
 The generated `index.json` is the machine-readable record tying each published license file and required notice to an exact package and version.
 
